@@ -1,10 +1,9 @@
 node_modules/
 dist/
 
-# Large media files (too big for GitHub, keep locally)
+# Large media files (keep locally only)
 originals/
 public/gs_Dave.ply
-public/video/
 
 # OS files
 Thumbs.db
