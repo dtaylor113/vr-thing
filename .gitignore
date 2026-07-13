@@ -1,0 +1,11 @@
+node_modules/
+dist/
+
+# Large media files (too big for GitHub, keep locally)
+originals/
+public/gs_Dave.ply
+public/video/
+
+# OS files
+Thumbs.db
+.DS_Store

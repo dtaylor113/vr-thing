@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dave – VR Splat Viewer</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      background: #000;
+      font-family: system-ui, sans-serif;
+    }
+    canvas { display: block; }
+    #info {
+      position: absolute;
+      top: 16px;
+      left: 16px;
+      color: #fff;
+      font-size: 14px;
+      opacity: 0.7;
+      pointer-events: none;
+    }
+    #loading-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 1000;
+      background: #1a1a2e;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: #ccc;
+      font-family: Georgia, serif;
+      transition: opacity 0.6s;
+    }
+    #loading-overlay.fade-out { opacity: 0; pointer-events: none; }
+    #loading-title {
+      font-size: 36px;
+      font-style: italic;
+      color: #ddccaa;
+      margin-bottom: 32px;
+    }
+    #loading-status { font-size: 18px; margin-bottom: 16px; }
+    #loading-bar-bg {
+      width: 320px;
+      height: 8px;
+      background: #333;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    #loading-bar {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #44aaff, #ddccaa);
+      border-radius: 4px;
+      transition: width 0.3s;
+    }
+  </style>
+</head>
+<body>
+  <div id="loading-overlay">
+    <div id="loading-title">Memory Rooms</div>
+    <div id="loading-status">Loading videos…</div>
+    <div id="loading-bar-bg"><div id="loading-bar"></div></div>
+  </div>
+  <div id="info">Loading…</div>
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
