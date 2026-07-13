@@ -53,6 +53,7 @@ export function buildDadsHistoryRoom() {
     createFramedPhoto(photo.src, pw, ph, new Vector3(x, y, wallZ), 0, opts);
   });
 
+
   // EXIT VR button (front wall)
   createExitButton(new Vector3(HIST_X, 1.2, ROOM_D / 2 - 0.15), Math.PI);
 
