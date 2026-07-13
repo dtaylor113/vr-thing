@@ -9,6 +9,7 @@ import {
   Raycaster,
 } from 'three';
 import { state } from './state.js';
+import { detectRoom } from './locomotion.js';
 
 const raycaster = new Raycaster();
 const tempDir = new Vector3();
@@ -17,6 +18,8 @@ const mouse = new Vector2();
 
 let controller0, controller1;
 let markerGroup;
+let lastClickTime = 0;
+const CLICK_COOLDOWN = 500;
 
 function raycastFromController(ctrl) {
   ctrl.getWorldPosition(tempPos);
@@ -67,6 +70,7 @@ function tryDoorTeleport(isDesktop) {
       } else {
         state.dolly.position.copy(door.target);
       }
+      detectRoom(door.target);
       return true;
     }
   }
@@ -79,7 +83,7 @@ function tryFrameTeleport(isDesktop) {
   if (hits.length > 0) {
     const frame = state.allFrameTargets.find((f) => f.mesh === hits[0].object);
     if (frame) {
-      if (state.activeFrame === frame) {
+      if (state.activeFrame === frame && frame.isPlaying()) {
         stopActiveFrame();
       } else {
         stopActiveFrame();
@@ -99,11 +103,13 @@ function tryFrameTeleport(isDesktop) {
   return false;
 }
 
+const EYE_HEIGHT = 1.6;
+
 function tryTeleport() {
   const hits = raycaster.intersectObjects(state.allFloors);
   if (hits.length > 0) {
-    state.dolly.position.x = hits[0].point.x;
-    state.dolly.position.z = hits[0].point.z;
+    const pt = hits[0].point;
+    state.dolly.position.set(pt.x, pt.y, pt.z);
     return true;
   }
   return false;
@@ -130,11 +136,33 @@ function onSelect(event) {
   tryTeleport();
 }
 
+function tryDesktopFloorTeleport() {
+  const hits = raycaster.intersectObjects(state.allFloors);
+  if (hits.length > 0) {
+    const pt = hits[0].point;
+    const { camera, controls } = state;
+    const dir = new Vector3();
+    camera.getWorldDirection(dir);
+    dir.y = 0;
+    dir.normalize();
+    const eyeY = pt.y + EYE_HEIGHT;
+    camera.position.set(pt.x, eyeY, pt.z);
+    controls.target.set(pt.x + dir.x, eyeY, pt.z + dir.z);
+    controls.update();
+    return true;
+  }
+  return false;
+}
+
 function onMouseClick(event) {
   if (state.renderer.xr.isPresenting) return;
+  const now = performance.now();
+  if (now - lastClickTime < CLICK_COOLDOWN) return;
+  lastClickTime = now;
   raycastFromMouse(event);
   if (tryDoorTeleport(true)) return;
-  tryFrameTeleport(true);
+  if (tryFrameTeleport(true)) return;
+  tryDesktopFloorTeleport();
 }
 
 function onMouseMove(event) {
@@ -154,6 +182,19 @@ function onMouseMove(event) {
     const hit = raycaster.intersectObject(f.mesh).length > 0;
     if (f.borderMat) f.borderMat.emissiveIntensity = hit ? 0.7 : 0;
     if (hit) hovering = true;
+  }
+
+  // Floor teleport marker
+  if (!hovering && markerGroup) {
+    const floorHits = raycaster.intersectObjects(state.allFloors);
+    if (floorHits.length > 0) {
+      markerGroup.position.copy(floorHits[0].point);
+      markerGroup.position.y += 0.01;
+      markerGroup.visible = true;
+      hovering = true;
+    } else {
+      markerGroup.visible = false;
+    }
   }
 
   canvas.style.cursor = hovering ? 'pointer' : '';

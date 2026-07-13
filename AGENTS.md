@@ -40,18 +40,18 @@ vr-thing/
   originals/                 Unconvertible source files (e.g. SpencerAngel.AVI)
   public/                    Single source of truth for all served media (copied to dist/ on build)
     images/                  Photos
-      dad/childhood/         12 childhood photos (dadInArmchair, daveSwings first)
+      dad/childhood/         12 childhood photos (DaveInArmchair, DaveSwings first)
     video/                   MP4/MOV videos (H.264, Quest-compatible)
       Reese_Running.mp4
       ReeseDoraBoots.mp4
       ReeseSellingCookies.mp4
       ReeseSledingSloMo.mp4
       SpencerAngel.mp4
-      Mason_Spencer_In_A_Tree.MOV
+      Mason_Spencer_In_A_Tree.mp4
       Spencer_Mason_Wrestling.mp4
       Reese_Flying_A_Kite.MP4
-      ReeseJumping.MOV
-      ReeseSinging.MOV
+      ReeseJumping.mp4
+      ReeseSinging.mp4
       ReeseYouTubeVideo.MP4
       MasonCrash.MP4
       MasonCrazyNarration.MP4
@@ -104,13 +104,13 @@ Exports constants `ROOM_W` (10), `ROOM_D` (10), `ROOM_H` (4).
 
 **`createBorderFrame(contentW, contentH, borderW)`** -- Returns a Group of 4 BoxGeometry bars forming a picture frame. Each frame has individual `MeshStandardMaterial` with emissive properties for hover glow effects.
 
-**`createFramedPhoto(src, photoW, photoH, pos, rotY, { audioSrc })`** -- Loads an image, wraps it in a border frame, adds a filename nameplate below. If `audioSrc` is provided, creates an HTML5 Audio object and adds a small ear icon to the right of the frame to indicate audio is available. Clicking the frame teleports to it and auto-plays the audio.
+**`createFramedPhoto(src, photoW, photoH, pos, rotY, { audioSrc })`** -- Loads an image, wraps it in a border frame, adds a filename nameplate below. If `audioSrc` is provided, creates an HTML5 Audio object and adds a small speaker icon to the right of the frame to indicate audio is available. Clicking the frame teleports to it and auto-plays the audio.
 
-**`createVideoScreen(src, width, aspectH, aspectW, pos, rotY)`** -- Creates a video player with manual CanvasTexture updates (prevents stereo flicker), filename nameplate below, and robust thumbnail generation. Clicking the frame teleports and auto-plays. Registered in `state.allVideos`.
+**`createVideoScreen(src, displayWidth, pos, rotY)`** -- Creates a video player with auto-detected aspect ratio (from video metadata), manual CanvasTexture updates (prevents stereo flicker), filename nameplate below, and robust thumbnail generation. No need to specify video dimensions -- the frame sizes itself automatically. Clicking the frame teleports and auto-plays. Registered in `state.allVideos`.
 
 **Filename nameplates**: Every frame displays a label below it derived from the filename -- underscores become spaces, camelCase is split (e.g. `ReeseDoraBoots.mp4` → `"Reese Dora Boots"`), rendered in italic serif script font with decorative curly quotes.
 
-### interaction.js (~175 lines)
+### interaction.js (~200 lines)
 **`setupInteraction(ctrl0, ctrl1)`** -- Creates teleport marker, wires `onSelect` for VR controllers, `onClick` and `onMouseMove` for desktop.
 
 **Click priority** (same for VR `onSelect` and desktop `onMouseClick`):
@@ -119,17 +119,15 @@ Exports constants `ROOM_W` (10), `ROOM_D` (10), `ROOM_H` (4).
 3. `tryFrameTeleport` -- checks `state.allFrameTargets`:
    - Clicking the **same** playing frame → stops playback
    - Clicking a **different** frame → stops current, teleports, starts new playback
-4. `tryTeleport` -- checks `state.allFloors` for floor teleport (VR only)
+4. Floor teleport -- checks `state.allFloors`; teleports user to clicked floor spot at standing eye height (1.6m) in both VR and desktop modes
 
 **Single-active-media pattern**: `state.activeFrame` tracks the currently playing frame. Only one video or audio can play at a time.
 
 **`updateHoverEffects(now)`** -- Called each VR frame. Updates teleport marker, pulses exit buttons, glows doors and frame borders on controller hover.
 
-**Desktop hover** (`onMouseMove`): Raycasts from mouse, applies emissive glow to doors and frame borders, changes cursor to pointer.
+**Desktop hover** (`onMouseMove`): Raycasts from mouse, applies emissive glow to doors and frame borders, shows floor teleport marker (blue ring), changes cursor to pointer on interactive elements.
 
 **`shortenRays(rayEntries)`** -- Raycasts each controller against all scene children; shortens the visible Line to the hit distance. Filters out the ray Line objects themselves to prevent self-intersection.
-
-**`hideMarker()`** -- Hides teleport marker (called in desktop mode).
 
 ### locomotion.js (~120 lines)
 **`setupLocomotion()`** -- Creates hand models, controller objects, and ray Line meshes. Returns `{ controller0, controller1, ray0, ray1 }`.
@@ -162,13 +160,13 @@ Adds an exit button and a door back to the main room on the front wall.
 Never use `VideoTexture` directly. The render loop draws video frames to a `<canvas>` once per frame, then marks the `CanvasTexture` as `needsUpdate`. This ensures both eyes see the same frame.
 
 ### Video Thumbnail Generation
-Uses multiple event listeners (`loadeddata` → seek to 0.1s, `seeked`, `canplay`) plus a 3-second fallback timeout to ensure the first frame is captured to the canvas. This handles videos that load slowly or have unusual codec behavior.
+Seeks to ~2 seconds into the video (or 5% of duration, whichever is shorter) to skip past black/fade-in frames. Uses `loadedmetadata` → seek, `seeked` event for capture, plus a 10-second fallback timeout.
 
 ### Multi-Room via Offset
 Rooms exist in the same scene at different x offsets (main at 0, history at 20). Teleporting between rooms sets `dolly.position`. Floor teleport and markers work across rooms via `state.allFloors`.
 
 ### Camera Room Clamping
-Each room registers an AABB in `state.roomBounds` when created. `clampToRoom()` finds the room the position is currently inside and constrains it within walls. Applied after WASD movement, controller locomotion, OrbitControls orbit/pan, and teleportation.
+Each room registers an AABB in `state.roomBounds` when created. `state.currentRoomIdx` tracks which room the user is in (updated by `detectRoom()` after door teleports). `clampToRoom()` constrains x/y/z to the current room's bounds. Applied after WASD movement, controller locomotion, OrbitControls orbit/pan, and teleportation. `OrbitControls.maxDistance` (6) and `maxPolarAngle` (0.85π) further prevent camera escape in desktop mode.
 
 ### Click-to-Play Frames
 Clicking any frame teleports the user eye-level in front of it. If the frame has media (video or audio narration), it auto-plays. Clicking a different frame stops the current media and switches. Clicking the same playing frame stops playback. The active frame is tracked via `state.activeFrame`.
@@ -185,7 +183,7 @@ Each frame, both controller rays are raycasted against all scene children. The v
 ### Adding New Content
 1. Place media directly in `public/` (images in `public/images/`, video in `public/video/`, audio in `public/audio/`). Convert AVI to MP4 first.
 2. In the room file (e.g., `rooms/mainRoom.js`), call `createFramedPhoto()` or `createVideoScreen()`
-3. For narration audio, add `audioSrc: '/audio/dad/filename.m4a'` to the options -- the ear icon appears automatically and audio plays on frame click
+3. For narration audio, add `audioSrc: '/audio/dad/filename.m4a'` to the options -- the speaker icon appears automatically and audio plays on frame click
 4. Filenames are auto-formatted into nameplates: underscores → spaces, camelCase → split words, wrapped in decorative quotes
 5. Wall rotations: Back=0, Right=-PI/2, Front=PI, Left=PI/2
 
@@ -204,4 +202,6 @@ Each frame, both controller rays are raycasted against all scene children. The v
 - Portrait videos from phones often have rotation metadata that needs correcting with ffmpeg
 - The left controller handles locomotion; right controller is for pointing/clicking
 - Hand tracking is supported but controllers provide much better locomotion
-- Use `preload="auto"` on videos for faster thumbnail generation
+- Videos use `preload="metadata"` initially (to avoid network congestion), switching to `preload="auto"` only when actively playing
+- `index.html` includes a controls legend (bottom-left) showing WASD/Q/E/scroll/click bindings; auto-hidden in VR mode
+- Desktop floor teleport: hovering the mouse over the floor shows a blue ring marker; clicking teleports to that spot at standing eye height

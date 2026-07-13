@@ -10,7 +10,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { VRButton } from 'three/addons/webxr/VRButton.js';
 import { state } from './state.js';
 import { setupLocomotion, handleControllerLocomotion, handleDesktopLocomotion, clampToRoom, RAY_MAX } from './locomotion.js';
-import { setupInteraction, updateHoverEffects, shortenRays, hideMarker } from './interaction.js';
+import { setupInteraction, updateHoverEffects, shortenRays } from './interaction.js';
 import { allVideosReady, onVideoLoadProgress } from './content.js';
 import { buildMainRoom } from './rooms/mainRoom.js';
 import { buildDadsHistoryRoom } from './rooms/dadsHistory.js';
@@ -50,6 +50,8 @@ setupInteraction(controller0, controller1);
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.target.set(0, 1.5, -2);
 controls.enableDamping = true;
+controls.maxDistance = 6;
+controls.maxPolarAngle = Math.PI * 0.85;
 camera.position.set(0, 1.6, 3);
 controls.update();
 state.controls = controls;
@@ -90,6 +92,7 @@ const rayEntries = [
   { ctrl: controller0, ray: ray0, maxLen: RAY_MAX },
   { ctrl: controller1, ray: ray1, maxLen: RAY_MAX },
 ];
+const controlsHUD = document.getElementById('controls');
 let lastTime = performance.now();
 
 renderer.setAnimationLoop(() => {
@@ -98,7 +101,7 @@ renderer.setAnimationLoop(() => {
   lastTime = now;
 
   for (const entry of state.allVideos) {
-    if (entry.playing && entry.vid.readyState >= entry.vid.HAVE_CURRENT_DATA) {
+    if (entry.playing && entry.ctx && entry.vid.readyState >= entry.vid.HAVE_CURRENT_DATA) {
       entry.ctx.drawImage(entry.vid, 0, 0, entry.canvas.width, entry.canvas.height);
       entry.tex.needsUpdate = true;
     }
@@ -108,12 +111,13 @@ renderer.setAnimationLoop(() => {
     handleControllerLocomotion(dt);
     updateHoverEffects(now);
     shortenRays(rayEntries);
+    if (controlsHUD) controlsHUD.style.display = 'none';
   } else {
     handleDesktopLocomotion(dt);
     controls.update();
     clampToRoom(camera.position);
     clampToRoom(controls.target);
-    hideMarker();
+    if (controlsHUD) controlsHUD.style.display = '';
   }
 
   renderer.render(scene, camera);

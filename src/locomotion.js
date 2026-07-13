@@ -11,15 +11,18 @@ import { state } from './state.js';
 const MOVE_SPEED = 2.5;
 const tempQuat = new Quaternion();
 
-function getCurrentRoom(pos) {
-  for (const b of state.roomBounds) {
-    if (pos.x >= b.minX && pos.x <= b.maxX && pos.z >= b.minZ && pos.z <= b.maxZ) return b;
+export function detectRoom(pos) {
+  for (let i = 0; i < state.roomBounds.length; i++) {
+    const b = state.roomBounds[i];
+    if (pos.x >= b.minX && pos.x <= b.maxX && pos.z >= b.minZ && pos.z <= b.maxZ) {
+      state.currentRoomIdx = i;
+      return;
+    }
   }
-  return null;
 }
 
 export function clampToRoom(pos) {
-  const room = getCurrentRoom(pos);
+  const room = state.roomBounds[state.currentRoomIdx];
   if (!room) return;
   pos.x = Math.max(room.minX, Math.min(room.maxX, pos.x));
   pos.z = Math.max(room.minZ, Math.min(room.maxZ, pos.z));

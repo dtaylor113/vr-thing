@@ -5,18 +5,18 @@ import { createFramedPhoto } from '../content.js';
 export const HIST_X = 20;
 
 const childhoodPhotos = [
-  { src: '/images/dad/childhood/dadInArmchair.jpg', w: 526, h: 604, audio: '/audio/dad/dave_armchair.m4a' },
-  { src: '/images/dad/childhood/daveSwings.jpg', w: 560, h: 604, audio: '/audio/dad/Dave-Swingset.m4a' },
-  { src: '/images/dad/childhood/daveAndPuppy.jpg', w: 604, h: 520 },
+  { src: '/images/dad/childhood/DaveInArmchair.jpg', w: 526, h: 604, audio: '/audio/dad/dave_armchair.m4a' },
+  { src: '/images/dad/childhood/DaveSwings.jpg', w: 560, h: 604, audio: '/audio/dad/Dave-Swingset.m4a' },
+  { src: '/images/dad/childhood/DaveAndPuppy.jpg', w: 604, h: 520 },
   { src: '/images/dad/childhood/DaveBike.jpg', w: 471, h: 634 },
-  { src: '/images/dad/childhood/daveDressUp.jpg', w: 814, h: 716, audio: '/audio/dad/Dave-Dressup.m4a' },
-  { src: '/images/dad/childhood/DadWithFriends.jpg', w: 868, h: 680, audio: '/audio/dad/Dave-Friends.m4a' },
-  { src: '/images/dad/childhood/daveWithSisters.jpg', w: 850, h: 689 },
-  { src: '/images/dad/childhood/DaveWithSisters_2.jpg', w: 660, h: 698 },
-  { src: '/images/dad/childhood/daveNewspaper.jpg', w: 696, h: 1269, audio: '/audio/dad/Dave-Newspaper.m4a' },
-  { src: '/images/dad/childhood/daveSchoolPhoto.jpg', w: 905, h: 1332 },
-  { src: '/images/dad/childhood/daveSchoolPhoto_1.jpg', w: 642, h: 924 },
-  { src: '/images/dad/childhood/youngHT.jpg', w: 860, h: 698, audio: '/audio/dad/Dave-HT.m4a' },
+  { src: '/images/dad/childhood/DaveDressUp.jpg', w: 814, h: 716, audio: '/audio/dad/Dave-Dressup.m4a' },
+  { src: '/images/dad/childhood/DaveWithFriends.jpg', w: 868, h: 680, audio: '/audio/dad/Dave-Friends.m4a' },
+  { src: '/images/dad/childhood/DaveWithSisters.jpg', w: 850, h: 689 },
+  { src: '/images/dad/childhood/DaveWithRonaAndApril.jpg', w: 660, h: 698 },
+  { src: '/images/dad/childhood/DaveInTheNew.jpg', w: 696, h: 1269, audio: '/audio/dad/Dave-Newspaper.m4a' },
+  { src: '/images/dad/childhood/DavePre-SchoolPhoto.jpg', w: 905, h: 1332 },
+  { src: '/images/dad/childhood/DaveSchoolPhoto.jpg', w: 642, h: 924 },
+  { src: '/images/dad/childhood/YoungHT.jpg', w: 860, h: 698, audio: '/audio/dad/Dave-HT.m4a' },
 ];
 
 export function buildDadsHistoryRoom() {

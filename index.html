@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Dave – VR Splat Viewer</title>
+  <title>Memory Rooms</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%231a1a2e'/><text x='16' y='22' font-size='20' text-anchor='middle' fill='%23ddccaa'>M</text></svg>">
   <style>
     body {
       margin: 0;
@@ -20,6 +21,31 @@
       font-size: 14px;
       opacity: 0.7;
       pointer-events: none;
+    }
+    #VRButton {
+      left: auto !important;
+      right: 20px !important;
+    }
+    #controls {
+      position: fixed;
+      bottom: 16px;
+      left: 16px;
+      color: #aab;
+      font-size: 12px;
+      line-height: 1.7;
+      pointer-events: none;
+      opacity: 0.6;
+    }
+    #controls kbd {
+      display: inline-block;
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 3px;
+      padding: 1px 5px;
+      font-family: inherit;
+      font-size: 11px;
+      min-width: 18px;
+      text-align: center;
     }
     #loading-overlay {
       position: fixed;
@@ -65,6 +91,12 @@
     <div id="loading-bar-bg"><div id="loading-bar"></div></div>
   </div>
   <div id="info">Loading…</div>
+  <div id="controls">
+    <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> Move &nbsp;
+    <kbd>Q</kbd><kbd>E</kbd> Up/Down &nbsp;
+    Scroll to zoom<br>
+    Drag to look &nbsp; Click floor to teleport &nbsp; Click frame to play
+  </div>
   <script type="module" src="/src/main.js"></script>
 </body>
 </html>

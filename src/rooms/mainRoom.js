@@ -15,52 +15,54 @@ export function buildMainRoom() {
     { label: 'Kids',              x: -ROOM_W / 2, z: 0,          w: ROOM_D, ry: Math.PI / 2 },
   ], { floor: 0x2a2a3a, wall: 0x3a3a4e, ceiling: 0x222233 });
 
-  // Kids wall content (back wall, z = -5)
+  // Back wall "Kids" (z = -5)
   const kz = -ROOM_D / 2 + 0.04;
 
   // Top row
-  createVideoScreen('/video/Reese_Running.mp4', 0.8, 1280, 720,
-    new Vector3(-3.5, 3.0, kz), 0);
+  createVideoScreen('/video/Reese_Running.mp4', 0.8,
+    new Vector3(-3.5, 2.8, kz), 0);
 
-  createVideoScreen('/video/ReeseDoraBoots.mp4', 1.2, 480, 640,
+  createVideoScreen('/video/ReeseDoraBoots.mp4', 1.2,
     new Vector3(-1.5, 3.0, kz), 0);
 
-  createVideoScreen('/video/ReeseSledingSloMo.mp4', 1.2, 720, 1280,
+  createVideoScreen('/video/ReeseSledingSloMo.mp4', 1.2,
     new Vector3(0.5, 3.0, kz), 0);
 
-  createVideoScreen('/video/ReeseSellingCookies.mp4', 0.8, 1920, 1080,
-    new Vector3(3.5, 3.0, kz), 0);
+  createVideoScreen('/video/ReeseSellingCookies.mp4', 0.8,
+    new Vector3(3.5, 2.8, kz), 0);
 
   // Bottom row
-  createVideoScreen('/video/SpencerAngel.mp4', 1.2, 480, 640,
+  createVideoScreen('/video/SpencerAngel.mp4', 1.2,
     new Vector3(-3.5, 1.2, kz), 0);
 
-  createVideoScreen('/video/Mason_Spencer_In_A_Tree.MOV', 1.2, 720, 1280,
-    new Vector3(-1.2, 1.2, kz), 0);
+  createVideoScreen('/video/Mason_Spencer_In_A_Tree.mp4', 0.8,
+    new Vector3(-1.2, 1.5, kz), 0);
 
-  createVideoScreen('/video/Spencer_Mason_Wrestling.mp4', 1.2, 480, 640,
+  createVideoScreen('/video/Spencer_Mason_Wrestling.mp4', 1.2,
     new Vector3(1.2, 1.2, kz), 0);
 
-  createVideoScreen('/video/Reese_Flying_A_Kite.MP4', 1.2, 720, 1280,
+  createVideoScreen('/video/Reese_Flying_A_Kite.MP4', 1.2,
     new Vector3(3.2, 1.2, kz), 0);
 
-  // Left "Kids" wall content (x = -5, rotY = PI/2)
+  // Left wall "Kids" (x = -5, rotY = PI/2)
   const lx = -ROOM_W / 2 + 0.04;
 
-  createVideoScreen('/video/ReeseJumping.MOV', 1.2, 720, 1280,
-    new Vector3(lx, 3.0, -3), Math.PI / 2);
+  // Top row
+  createVideoScreen('/video/ReeseJumping.mp4', 0.8,
+    new Vector3(lx, 2.7, -3), Math.PI / 2);
 
-  createVideoScreen('/video/ReeseSinging.MOV', 1.2, 720, 1280,
-    new Vector3(lx, 3.0, 0), Math.PI / 2);
+  createVideoScreen('/video/ReeseSinging.mp4', 0.8,
+    new Vector3(lx, 2.7, 0), Math.PI / 2);
 
-  createVideoScreen('/video/ReeseYouTubeVideo.MP4', 1.2, 480, 640,
+  createVideoScreen('/video/ReeseYouTubeVideo.MP4', 1.2,
     new Vector3(lx, 3.0, 3), Math.PI / 2);
 
-  createVideoScreen('/video/MasonCrash.MP4', 1.2, 480, 640,
-    new Vector3(lx, 1.2, -2), Math.PI / 2);
+  // Bottom row
+  createVideoScreen('/video/MasonCrash.MP4', 1.2,
+    new Vector3(lx, 1.0, -2), Math.PI / 2);
 
-  createVideoScreen('/video/MasonCrazyNarration.MP4', 1.2, 480, 640,
-    new Vector3(lx, 1.2, 2), Math.PI / 2);
+  createVideoScreen('/video/MasonCrazyNarration.MP4', 1.2,
+    new Vector3(lx, 1.0, 2), Math.PI / 2);
 
   // 3D Picture frame model (Mom/Dad wall)
   const gltfLoader = new GLTFLoader();

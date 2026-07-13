@@ -71,7 +71,7 @@ function filenameToLabel(src) {
     .replace(/([A-Z]+)([A-Z][a-z])/g, '$1 $2');
 }
 
-function makeEarIcon() {
+function makeSpeakerIcon() {
   const s = 128;
   const canvas = document.createElement('canvas');
   canvas.width = s;
@@ -83,19 +83,25 @@ function makeEarIcon() {
   ctx.arc(s / 2, s / 2, s / 2 - 2, 0, Math.PI * 2);
   ctx.fill();
 
+  ctx.fillStyle = '#fff';
+  ctx.beginPath();
+  ctx.moveTo(s * 0.28, s * 0.38);
+  ctx.lineTo(s * 0.38, s * 0.38);
+  ctx.lineTo(s * 0.52, s * 0.25);
+  ctx.lineTo(s * 0.52, s * 0.75);
+  ctx.lineTo(s * 0.38, s * 0.62);
+  ctx.lineTo(s * 0.28, s * 0.62);
+  ctx.closePath();
+  ctx.fill();
+
   ctx.strokeStyle = '#fff';
-  ctx.lineWidth = 4;
+  ctx.lineWidth = 3.5;
   ctx.lineCap = 'round';
   ctx.beginPath();
-  const cx = s * 0.48, cy = s * 0.46;
-  ctx.arc(cx, cy, s * 0.22, -Math.PI * 0.8, Math.PI * 0.6);
+  ctx.arc(s * 0.52, s * 0.5, s * 0.12, -Math.PI * 0.35, Math.PI * 0.35);
   ctx.stroke();
   ctx.beginPath();
-  ctx.arc(cx, cy, s * 0.13, -Math.PI * 0.6, Math.PI * 0.3);
-  ctx.stroke();
-  ctx.beginPath();
-  ctx.moveTo(cx + s * 0.18, cy + s * 0.17);
-  ctx.quadraticCurveTo(cx + s * 0.14, cy + s * 0.32, cx - s * 0.02, cy + s * 0.32);
+  ctx.arc(s * 0.52, s * 0.5, s * 0.22, -Math.PI * 0.35, Math.PI * 0.35);
   ctx.stroke();
 
   const tex = new CanvasTexture(canvas);
@@ -136,7 +142,7 @@ export function createBorderFrame(contentW, contentH, borderW) {
   return g;
 }
 
-function registerFrame(mesh, border, contentH, contentW, pos, rotY, play, stop) {
+function registerFrame(mesh, border, contentH, contentW, pos, rotY, play, stop, isPlaying) {
   const standoff = 1.5;
   const target = new Vector3(
     pos.x + Math.sin(rotY) * standoff,
@@ -150,6 +156,7 @@ function registerFrame(mesh, border, contentH, contentW, pos, rotY, play, stop) 
     contentPos: pos.clone(),
     play: play || null,
     stop: stop || null,
+    isPlaying: isPlaying || (() => false),
   });
 }
 
@@ -184,96 +191,120 @@ export function createFramedPhoto(src, photoW, photoH, pos, rotY, { audioSrc } =
 
   let play = null;
   let stop = null;
+  let isPlaying = () => false;
 
   if (audioSrc) {
     const audio = new Audio(audioSrc);
-    play = () => { audio.currentTime = 0; audio.play(); };
+    audio.preload = 'auto';
+    play = () => {
+      audio.currentTime = 0;
+      audio.play().catch((e) => console.warn('Audio play failed:', audioSrc, e));
+    };
     stop = () => { audio.pause(); audio.currentTime = 0; };
+    isPlaying = () => !audio.paused && !audio.ended;
 
-    const ear = makeEarIcon();
-    ear.position.set(photoW / 2 + 0.14, 0, 0.13);
-    group.add(ear);
+    const speaker = makeSpeakerIcon();
+    speaker.position.set(photoW / 2 + 0.22, 0, 0.13);
+    group.add(speaker);
   }
 
-  registerFrame(hitArea, border, photoH, photoW, pos, rotY, play, stop);
+  registerFrame(hitArea, border, photoH, photoW, pos, rotY, play, stop, isPlaying);
 
   return group;
 }
 
-export function createVideoScreen(src, width, aspectH, aspectW, pos, rotY) {
-  const h = width * (aspectH / aspectW);
-  const texW = 512;
-  const texH = Math.round(texW * (aspectH / aspectW));
-
+export function createVideoScreen(src, displayWidth, pos, rotY) {
   const vid = document.createElement('video');
   vid.src = src;
   vid.crossOrigin = 'anonymous';
   vid.loop = true;
   vid.playsInline = true;
-  vid.preload = 'auto';
-
-  const canvas = document.createElement('canvas');
-  canvas.width = texW;
-  canvas.height = texH;
-  const ctx = canvas.getContext('2d');
-  ctx.fillStyle = '#000';
-  ctx.fillRect(0, 0, texW, texH);
-
-  const tex = new CanvasTexture(canvas);
-  tex.colorSpace = SRGBColorSpace;
+  vid.preload = 'metadata';
 
   const group = new Group();
-
-  const border = createBorderFrame(width, h, 0.06);
-  group.add(border);
-
-  const screen = new Mesh(
-    new PlaneGeometry(width, h),
-    new MeshBasicMaterial({ map: tex }),
-  );
-  screen.position.z = 0.1;
-  group.add(screen);
-
-  const hitArea = new Mesh(
-    new PlaneGeometry(width + 0.14, h + 0.14),
-    new MeshBasicMaterial({ visible: false }),
-  );
-  hitArea.position.z = 0.12;
-  group.add(hitArea);
-
-  const nameplate = makeNameplate(filenameToLabel(src), width);
-  nameplate.position.set(0, -(h / 2) - 0.2, 0.05);
-  group.add(nameplate);
-
   group.position.copy(pos);
   group.rotation.y = rotY;
   state.scene.add(group);
 
-  const entry = { vid, playing: false, ctx, canvas, tex };
+  const entry = { vid, playing: false, ctx: null, canvas: null, tex: null };
   state.allVideos.push(entry);
 
-  const play = () => { vid.play(); entry.playing = true; };
-  const stop = () => { vid.pause(); entry.playing = false; };
-
-  registerFrame(hitArea, border, h, width, pos, rotY, play, stop);
+  const play = () => {
+    if (vid.error || vid.readyState === 0) vid.load();
+    vid.preload = 'auto';
+    vid.play().catch((e) => console.warn('Video play failed:', src, e));
+    entry.playing = true;
+  };
+  const stop = () => {
+    vid.pause();
+    vid.preload = 'metadata';
+    entry.playing = false;
+  };
+  const isPlaying = () => !vid.paused && !vid.ended;
 
   let thumbnailDone = false;
   const ready = new Promise((resolve) => {
-    function grabThumbnail() {
-      if (thumbnailDone) return;
+    vid.addEventListener('loadedmetadata', () => {
+      const vw = vid.videoWidth;
+      const vh = vid.videoHeight;
+      const h = displayWidth * (vh / vw);
+      const texW = 512;
+      const texH = Math.round(texW * (vh / vw));
+
+      const canvas = document.createElement('canvas');
+      canvas.width = texW;
+      canvas.height = texH;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#000';
+      ctx.fillRect(0, 0, texW, texH);
+
+      const tex = new CanvasTexture(canvas);
+      tex.colorSpace = SRGBColorSpace;
+
+      entry.ctx = ctx;
+      entry.canvas = canvas;
+      entry.tex = tex;
+
+      const border = createBorderFrame(displayWidth, h, 0.06);
+      group.add(border);
+
+      const screen = new Mesh(
+        new PlaneGeometry(displayWidth, h),
+        new MeshBasicMaterial({ map: tex }),
+      );
+      screen.position.z = 0.1;
+      group.add(screen);
+
+      const hitArea = new Mesh(
+        new PlaneGeometry(displayWidth + 0.14, h + 0.14),
+        new MeshBasicMaterial({ visible: false }),
+      );
+      hitArea.position.z = 0.12;
+      group.add(hitArea);
+
+      const nameplate = makeNameplate(filenameToLabel(src), displayWidth);
+      nameplate.position.set(0, -(h / 2) - 0.2, 0.05);
+      group.add(nameplate);
+
+      registerFrame(hitArea, border, h, displayWidth, pos, rotY, play, stop, isPlaying);
+
+      vid.currentTime = Math.min(2.0, vid.duration * 0.05);
+    });
+
+    vid.addEventListener('seeked', function grabThumbnail() {
+      if (thumbnailDone || !entry.ctx) return;
       if (vid.readyState >= vid.HAVE_CURRENT_DATA) {
-        ctx.drawImage(vid, 0, 0, canvas.width, canvas.height);
-        tex.needsUpdate = true;
+        entry.ctx.drawImage(vid, 0, 0, entry.canvas.width, entry.canvas.height);
+        entry.tex.needsUpdate = true;
         thumbnailDone = true;
         resolve();
         if (onProgressCallback) onProgressCallback();
       }
-    }
+    });
 
-    vid.addEventListener('loadeddata', () => { vid.currentTime = 0.1; });
-    vid.addEventListener('seeked', grabThumbnail);
-    vid.addEventListener('canplay', grabThumbnail);
-    setTimeout(() => { grabThumbnail(); if (!thumbnailDone) resolve(); }, 8000);
+    setTimeout(() => {
+      if (!thumbnailDone) { resolve(); if (onProgressCallback) onProgressCallback(); }
+    }, 10000);
   });
   videoLoadPromises.push(ready);
 

@@ -13,4 +13,5 @@ export const state = {
   activeFrame: null,
 
   roomBounds: [],
+  currentRoomIdx: 0,
 };
