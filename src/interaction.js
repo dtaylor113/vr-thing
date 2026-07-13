@@ -10,6 +10,7 @@ import {
 } from 'three';
 import { state } from './state.js';
 import { detectRoom } from './locomotion.js';
+import { isEditMode } from './editMode.js';
 
 const raycaster = new Raycaster();
 const tempDir = new Vector3();
@@ -20,6 +21,8 @@ let controller0, controller1;
 let markerGroup;
 let lastClickTime = 0;
 const CLICK_COOLDOWN = 500;
+let mouseDownPos = { x: 0, y: 0 };
+const DRAG_THRESHOLD = 5;
 
 function raycastFromController(ctrl) {
   ctrl.getWorldPosition(tempPos);
@@ -154,8 +157,21 @@ function tryDesktopFloorTeleport() {
   return false;
 }
 
+function onMouseDown(event) {
+  mouseDownPos.x = event.clientX;
+  mouseDownPos.y = event.clientY;
+}
+
+function wasDrag(event) {
+  const dx = event.clientX - mouseDownPos.x;
+  const dy = event.clientY - mouseDownPos.y;
+  return Math.sqrt(dx * dx + dy * dy) > DRAG_THRESHOLD;
+}
+
 function onMouseClick(event) {
   if (state.renderer.xr.isPresenting) return;
+  if (isEditMode()) return;
+  if (wasDrag(event)) return;
   const now = performance.now();
   if (now - lastClickTime < CLICK_COOLDOWN) return;
   lastClickTime = now;
@@ -167,6 +183,11 @@ function onMouseClick(event) {
 
 function onMouseMove(event) {
   if (state.renderer.xr.isPresenting) return;
+  if (isEditMode()) {
+    if (markerGroup) markerGroup.visible = false;
+    state.renderer.domElement.style.cursor = '';
+    return;
+  }
   raycastFromMouse(event);
 
   const canvas = state.renderer.domElement;
@@ -224,6 +245,7 @@ export function setupInteraction(ctrl0, ctrl1) {
   controller0.addEventListener('select', onSelect);
   controller1.addEventListener('select', onSelect);
 
+  state.renderer.domElement.addEventListener('mousedown', onMouseDown);
   state.renderer.domElement.addEventListener('click', onMouseClick);
   state.renderer.domElement.addEventListener('mousemove', onMouseMove);
 }

@@ -7,6 +7,7 @@ import {
 } from 'three';
 import { XRHandModelFactory } from 'three/addons/webxr/XRHandModelFactory.js';
 import { state } from './state.js';
+import { isEditMode } from './editMode.js';
 
 const MOVE_SPEED = 2.5;
 const tempQuat = new Quaternion();
@@ -83,10 +84,11 @@ export function handleDesktopLocomotion(dt) {
 
   const move = new Vector3();
 
-  if (keysDown.has('KeyW') || keysDown.has('ArrowUp')) move.add(forward);
-  if (keysDown.has('KeyS') || keysDown.has('ArrowDown')) move.sub(forward);
-  if (keysDown.has('KeyA') || keysDown.has('ArrowLeft')) move.sub(right);
-  if (keysDown.has('KeyD') || keysDown.has('ArrowRight')) move.add(right);
+  const editActive = isEditMode();
+  if (keysDown.has('KeyW') || (!editActive && keysDown.has('ArrowUp'))) move.add(forward);
+  if (keysDown.has('KeyS') || (!editActive && keysDown.has('ArrowDown'))) move.sub(forward);
+  if (keysDown.has('KeyA') || (!editActive && keysDown.has('ArrowLeft'))) move.sub(right);
+  if (keysDown.has('KeyD') || (!editActive && keysDown.has('ArrowRight'))) move.add(right);
 
   if (move.lengthSq() > 0) {
     move.normalize().multiplyScalar(speed);

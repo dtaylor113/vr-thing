@@ -14,6 +14,7 @@ import { setupInteraction, updateHoverEffects, shortenRays } from './interaction
 import { allVideosReady, onVideoLoadProgress } from './content.js';
 import { buildMainRoom } from './rooms/mainRoom.js';
 import { buildDadsHistoryRoom } from './rooms/dadsHistory.js';
+import { setupEditMode } from './editMode.js';
 
 // ── Renderer ──
 const renderer = new WebGLRenderer({ antialias: true });
@@ -45,6 +46,9 @@ buildDadsHistoryRoom();
 // ── Input ──
 const { controller0, controller1, ray0, ray1 } = setupLocomotion();
 setupInteraction(controller0, controller1);
+
+// ── Edit mode (desktop only) ──
+setupEditMode();
 
 // ── Desktop controls ──
 const controls = new OrbitControls(camera, renderer.domElement);
@@ -107,7 +111,10 @@ renderer.setAnimationLoop(() => {
     }
   }
 
-  if (renderer.xr.isPresenting) {
+  const inVR = renderer.xr.isPresenting;
+  for (const eb of state.allExitBtns) eb.visible = inVR;
+
+  if (inVR) {
     handleControllerLocomotion(dt);
     updateHoverEffects(now);
     shortenRays(rayEntries);

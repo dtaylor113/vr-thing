@@ -36,6 +36,36 @@
       pointer-events: none;
       opacity: 0.6;
     }
+    #edit-banner {
+      position: fixed;
+      top: 12px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0, 20, 10, 0.85);
+      color: #0f8;
+      padding: 6px 22px;
+      font: bold 15px monospace;
+      border: 2px solid #0f8;
+      border-radius: 6px;
+      pointer-events: none;
+      z-index: 100;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+    #edit-hud {
+      position: fixed;
+      top: 16px;
+      right: 16px;
+      background: rgba(0, 20, 10, 0.85);
+      color: #0f8;
+      padding: 10px 14px;
+      font: 13px/1.6 monospace;
+      border: 1px solid #0f8;
+      border-radius: 4px;
+      pointer-events: none;
+      z-index: 100;
+      min-width: 160px;
+    }
     #controls kbd {
       display: inline-block;
       background: rgba(255,255,255,0.12);
@@ -92,10 +122,22 @@
   </div>
   <div id="info">Loading…</div>
   <div id="controls">
-    <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> Move &nbsp;
-    <kbd>Q</kbd><kbd>E</kbd> Up/Down &nbsp;
-    Scroll to zoom<br>
-    Drag to look &nbsp; Click floor to teleport &nbsp; Click frame to play
+    <span id="controls-nav">
+      <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> Move &nbsp;
+      <kbd>Q</kbd><kbd>E</kbd> Up/Down &nbsp;
+      Scroll to zoom &nbsp;
+      <kbd>P</kbd> Edit mode<br>
+      Drag to look &nbsp; Click floor to teleport &nbsp; Click frame to play
+    </span>
+    <span id="controls-edit" style="display:none">
+      <kbd>P</kbd> Exit edit &nbsp;
+      Click to select &nbsp;
+      <kbd>&larr;</kbd><kbd>&rarr;</kbd><kbd>&uarr;</kbd><kbd>&darr;</kbd> Move &nbsp;
+      <kbd>[</kbd><kbd>]</kbd> Rotate<br>
+      Hold <kbd>Shift</kbd> for fine &nbsp;
+      <kbd>Enter</kbd> Log position &nbsp;
+      <kbd>Esc</kbd> Deselect
+    </span>
   </div>
   <script type="module" src="/src/main.js"></script>
 </body>

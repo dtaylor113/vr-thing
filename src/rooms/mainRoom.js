@@ -9,10 +9,10 @@ export function buildMainRoom() {
   const origin = new Vector3(0, 0, 0);
 
   createRoom(origin, [
-    { label: 'Kids',              x: 0,          z: -ROOM_D / 2, w: ROOM_W, ry: 0 },
+    { label: '',                  x: 0,          z: -ROOM_D / 2, w: ROOM_W, ry: 0 },
     { label: 'Mom / Dad',         x: ROOM_W / 2, z: 0,           w: ROOM_D, ry: -Math.PI / 2 },
-    { label: 'Friends',           x: 0,          z: ROOM_D / 2,  w: ROOM_W, ry: Math.PI },
-    { label: 'Kids',              x: -ROOM_W / 2, z: 0,          w: ROOM_D, ry: Math.PI / 2 },
+    { label: '',                  x: 0,          z: ROOM_D / 2,  w: ROOM_W, ry: Math.PI },
+    { label: '',                  x: -ROOM_W / 2, z: 0,          w: ROOM_D, ry: Math.PI / 2 },
   ], { floor: 0x2a2a3a, wall: 0x3a3a4e, ceiling: 0x222233 });
 
   // Back wall "Kids" (z = -5)
@@ -54,7 +54,7 @@ export function buildMainRoom() {
   createVideoScreen('/video/ReeseSinging.mp4', 0.8,
     new Vector3(lx, 2.7, 0), Math.PI / 2);
 
-  createVideoScreen('/video/ReeseYouTubeVideo.MP4', 1.2,
+  createVideoScreen('/video/ReeseYoutubeVideo.MP4', 1.2,
     new Vector3(lx, 3.0, 3), Math.PI / 2);
 
   // Bottom row
@@ -64,17 +64,55 @@ export function buildMainRoom() {
   createVideoScreen('/video/MasonCrazyNarration.MP4', 1.2,
     new Vector3(lx, 1.0, 2), Math.PI / 2);
 
-  // 3D Picture frame model (Mom/Dad wall)
+  // 3D Picture frame + pedestal (Mom/Dad wall)
   const gltfLoader = new GLTFLoader();
-  gltfLoader.load('/models/frame.glb', (gltf) => {
-    const model = gltf.scene;
-    model.scale.setScalar(1.0);
-    model.position.set(ROOM_W / 2 - 1.0, 1.0, 0);
-    model.rotation.y = Math.PI / 2;
-    state.scene.add(model);
+
+  gltfLoader.load('/models/pedestal.glb', (gltf) => {
+    const pedestal = gltf.scene;
+    pedestal.scale.setScalar(2.0);
+    pedestal.position.set(3.55, 0.87, 0.95);
+    pedestal.rotation.y = -2.35;
+    state.scene.add(pedestal);
   });
 
-  // EXIT VR button (Friends/front wall)
+  gltfLoader.load('/models/frame.glb', (gltf) => {
+    const frame = gltf.scene;
+    frame.scale.setScalar(0.8);
+    frame.position.set(4.05, 1.84, 0.45);
+    frame.rotation.y = 1.5207963;
+    state.scene.add(frame);
+  });
+
+  // South wall (front, z = +5)
+  const sz = ROOM_D / 2 - 0.04;
+
+  // Top row
+  createVideoScreen('/video/ReeseLeavingHospital.mp4', 1.2,
+    new Vector3(-3.5, 3.0, sz), Math.PI);
+
+  createVideoScreen('/video/MasonsGeckoBirthday.mp4', 1.2,
+    new Vector3(-1.5, 3.0, sz), Math.PI);
+
+  createVideoScreen('/video/MasonLamb.mp4', 1.2,
+    new Vector3(1.5, 3.0, sz), Math.PI);
+
+  createVideoScreen('/video/OldeHomeDayBattle.mp4', 1.2,
+    new Vector3(3.5, 3.0, sz), Math.PI);
+
+  // Bottom row
+  createVideoScreen('/video/Reese1stDayHome.mp4', 1.2,
+    new Vector3(-3.5, 1.2, sz), Math.PI);
+
+  createVideoScreen('/video/ReeseDance.mp4', 1.2,
+    new Vector3(-1.5, 1.2, sz), Math.PI);
+
+  createVideoScreen('/video/SpencerMasonDisneyPool.mp4', 1.2,
+    new Vector3(1.5, 1.2, sz), Math.PI);
+
+  createVideoScreen('/video/BabyReese.mp4', 1.2,
+    new Vector3(3.5, 1.2, sz), Math.PI);
+
+  // EXIT VR button (South wall, center)
   createExitButton(new Vector3(0, 1.2, ROOM_D / 2 - 0.15), Math.PI);
 
   // Door to Dad's History (Mom/Dad wall, left side when facing Kids)

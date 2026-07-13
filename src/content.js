@@ -220,6 +220,7 @@ export function createVideoScreen(src, displayWidth, pos, rotY) {
   vid.loop = true;
   vid.playsInline = true;
   vid.preload = 'metadata';
+  vid.addEventListener('error', () => console.warn('Video error:', src, vid.error?.message));
 
   const group = new Group();
   group.position.copy(pos);
@@ -245,11 +246,12 @@ export function createVideoScreen(src, displayWidth, pos, rotY) {
   let thumbnailDone = false;
   const ready = new Promise((resolve) => {
     vid.addEventListener('loadedmetadata', () => {
-      const vw = vid.videoWidth;
-      const vh = vid.videoHeight;
-      const h = displayWidth * (vh / vw);
+      const vw = vid.videoWidth || 640;
+      const vh = vid.videoHeight || 480;
+      const aspect = vh / vw;
+      const h = displayWidth * aspect;
       const texW = 512;
-      const texH = Math.round(texW * (vh / vw));
+      const texH = Math.max(1, Math.round(texW * aspect));
 
       const canvas = document.createElement('canvas');
       canvas.width = texW;
