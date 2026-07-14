@@ -1,9 +1,13 @@
-import { Vector3, TextureLoader, PlaneGeometry, Box3, BoxGeometry, MeshBasicMaterial, MeshStandardMaterial, Mesh, SRGBColorSpace, CanvasTexture } from 'three';
+import { Group, Vector3, TextureLoader, PlaneGeometry, Box3, BoxGeometry, MeshBasicMaterial, MeshStandardMaterial, Mesh, SRGBColorSpace, CanvasTexture } from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import jsmediatags from 'jsmediatags';
 import { createRoom, createDoor, createExitButton, ROOM_W, ROOM_D } from '../room.js';
-import { createFramedPhoto, createAnaglyphStereo, createStereoPair } from '../content.js';
+import { createFramedPhoto, createAnaglyphStereo, createStereoPair, createMuseumPlaque } from '../content.js';
 import { state } from '../state.js';
+import * as pdfjsLib from 'pdfjs-dist';
+import pdfjsWorker from 'pdfjs-dist/build/pdf.worker.mjs?url';
+
+pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
 
 export const HIST_X = 20;
 
@@ -72,6 +76,11 @@ export function buildDadsHistoryRoom() {
   createFramedPhoto('/images/dad/Art/WildLife.jpg', 1.2, 0.8,
     new Vector3(HIST_X + 1.5, 1.4, sz), Math.PI);
 
+  // Museum plaque for Photoshop/KPT art (south wall, lower right)
+  createMuseumPlaque([
+    'These pieces were created entirely in Adobe Photoshop using KPT (Kai\u2019s Power Tools) \u2014 a suite of experimental filters and effects popular in the late 1990s. Layers of generated textures, fractals, and color manipulations were composited to produce each image.',
+  ], 1.3, new Vector3(19.90, 1.40, 4.91), Math.PI, 'kpt_art');
+
   // EXIT VR button (front wall)
   createExitButton(new Vector3(HIST_X + 3.5, 2.8, ROOM_D / 2 - 0.15), Math.PI);
 
@@ -80,7 +89,7 @@ export function buildDadsHistoryRoom() {
     'Main Room',
     new Vector3(HIST_X + 3.5, 1.0, ROOM_D / 2 - 0.05),
     Math.PI,
-    new Vector3(0, 0, 0),
+    new Vector3(0, 1.6, 0),
   );
 
   // GLB models — table and action figure on "Before Laura" side
@@ -99,9 +108,232 @@ export function buildDadsHistoryRoom() {
     const dave = gltf.scene;
     dave.name = 'AI_Dave';
     dave.scale.setScalar(0.5);
-    dave.position.set(24.19, 1.64, -0.98);
+    dave.position.set(24.74, 0.49, 0.32);
     dave.rotation.y = -2.1;
     state.scene.add(dave);
+  });
+
+  // --- PDF Viewer for Retro PC ---
+  let pdfDoc = null;
+  let currentPage = 1;
+  let totalPages = 0;
+
+  const pdfCanvas = document.createElement('canvas');
+  pdfCanvas.width = 1024;
+  pdfCanvas.height = 1400;
+  const pdfCtx = pdfCanvas.getContext('2d');
+  pdfCtx.fillStyle = '#222';
+  pdfCtx.fillRect(0, 0, 1024, 1400);
+  const pdfTex = new CanvasTexture(pdfCanvas);
+
+  const pdfViewerGroup = new Group();
+  pdfViewerGroup.name = 'pdf_viewer';
+  pdfViewerGroup.visible = false;
+
+  const pdfDisplayW = 1.2;
+  const pdfDisplayH = 1.6;
+
+  const pdfBg = new Mesh(
+    new PlaneGeometry(pdfDisplayW + 0.15, pdfDisplayH + 0.4),
+    new MeshBasicMaterial({ color: 0x111111 }),
+  );
+  pdfBg.position.z = -0.01;
+  pdfViewerGroup.add(pdfBg);
+
+  const pdfDisplay = new Mesh(
+    new PlaneGeometry(pdfDisplayW, pdfDisplayH),
+    new MeshBasicMaterial({ map: pdfTex }),
+  );
+  pdfViewerGroup.add(pdfDisplay);
+
+  const counterCanvas = document.createElement('canvas');
+  counterCanvas.width = 256;
+  counterCanvas.height = 64;
+  const counterCtx = counterCanvas.getContext('2d');
+  const counterTex = new CanvasTexture(counterCanvas);
+
+  function updateCounter() {
+    counterCtx.fillStyle = '#111';
+    counterCtx.fillRect(0, 0, 256, 64);
+    counterCtx.fillStyle = '#fff';
+    counterCtx.font = 'bold 28px sans-serif';
+    counterCtx.textAlign = 'center';
+    counterCtx.textBaseline = 'middle';
+    counterCtx.fillText(`Page ${currentPage} of ${totalPages}`, 128, 32);
+    counterTex.needsUpdate = true;
+  }
+
+  const counterMesh = new Mesh(
+    new PlaneGeometry(0.5, 0.12),
+    new MeshBasicMaterial({ map: counterTex }),
+  );
+  counterMesh.position.set(0, -(pdfDisplayH / 2) - 0.12, 0);
+  pdfViewerGroup.add(counterMesh);
+
+  const prevCanvas = document.createElement('canvas');
+  prevCanvas.width = 128;
+  prevCanvas.height = 64;
+  const prevCtx = prevCanvas.getContext('2d');
+  prevCtx.fillStyle = '#333';
+  prevCtx.fillRect(0, 0, 128, 64);
+  prevCtx.fillStyle = '#ffd700';
+  prevCtx.font = 'bold 32px sans-serif';
+  prevCtx.textAlign = 'center';
+  prevCtx.textBaseline = 'middle';
+  prevCtx.fillText('\u25C0 Prev', 64, 32);
+  const prevTex = new CanvasTexture(prevCanvas);
+  const prevBtn = new Mesh(
+    new PlaneGeometry(0.3, 0.12),
+    new MeshBasicMaterial({ map: prevTex }),
+  );
+  prevBtn.position.set(-0.35, -(pdfDisplayH / 2) - 0.12, 0);
+  pdfViewerGroup.add(prevBtn);
+
+  const nextCanvas = document.createElement('canvas');
+  nextCanvas.width = 128;
+  nextCanvas.height = 64;
+  const nextCtx = nextCanvas.getContext('2d');
+  nextCtx.fillStyle = '#333';
+  nextCtx.fillRect(0, 0, 128, 64);
+  nextCtx.fillStyle = '#ffd700';
+  nextCtx.font = 'bold 32px sans-serif';
+  nextCtx.textAlign = 'center';
+  nextCtx.textBaseline = 'middle';
+  nextCtx.fillText('Next \u25B6', 64, 32);
+  const nextTex = new CanvasTexture(nextCanvas);
+  const nextBtn = new Mesh(
+    new PlaneGeometry(0.3, 0.12),
+    new MeshBasicMaterial({ map: nextTex }),
+  );
+  nextBtn.position.set(0.35, -(pdfDisplayH / 2) - 0.12, 0);
+  pdfViewerGroup.add(nextBtn);
+
+  const pcRotY = -1.7;
+  pdfViewerGroup.position.set(
+    23.95 + Math.sin(pcRotY) * 0.5,
+    2.2,
+    -1.14 + Math.cos(pcRotY) * 0.5,
+  );
+  pdfViewerGroup.rotation.y = pcRotY;
+  state.scene.add(pdfViewerGroup);
+
+  async function loadPdf() {
+    if (pdfDoc) return;
+    const task = pdfjsLib.getDocument("/images/dad/Dave Taylor's GUI Portfolio.pdf");
+    pdfDoc = await task.promise;
+    totalPages = pdfDoc.numPages;
+  }
+
+  async function renderPdfPage(pageNum) {
+    if (!pdfDoc) return;
+    const page = await pdfDoc.getPage(pageNum);
+    const viewport = page.getViewport({ scale: 2.0 });
+    pdfCanvas.width = viewport.width;
+    pdfCanvas.height = viewport.height;
+    pdfCtx.fillStyle = '#fff';
+    pdfCtx.fillRect(0, 0, pdfCanvas.width, pdfCanvas.height);
+    await page.render({ canvasContext: pdfCtx, viewport }).promise;
+    pdfTex.needsUpdate = true;
+    updateCounter();
+  }
+
+  const pcFrame = {
+    mesh: null,
+    borderMat: null,
+    target: new Vector3(
+      23.95 + Math.sin(pcRotY) * 1.5,
+      1.6,
+      -1.14 + Math.cos(pcRotY) * 1.5,
+    ),
+    contentPos: new Vector3(23.95, 1.15, -1.14),
+    play: async () => {
+      pdfViewerGroup.visible = true;
+      await loadPdf();
+      renderPdfPage(currentPage);
+    },
+    stop: () => {
+      pdfViewerGroup.visible = false;
+    },
+    isPlaying: () => pdfViewerGroup.visible,
+  };
+
+  gltfLoader.load('/models/retro-pc.glb', (gltf) => {
+    const pc = gltf.scene;
+    pc.name = 'retro_pc';
+    pc.scale.setScalar(0.004806);
+    pc.position.set(23.95, 1.15, -1.14);
+    pc.rotation.y = pcRotY;
+    state.scene.add(pc);
+
+    const pcHit = new Mesh(
+      new BoxGeometry(0.6, 0.5, 0.5),
+      new MeshBasicMaterial({ visible: false }),
+    );
+    pcHit.position.copy(pc.position);
+    pcHit.position.y += 0.25;
+    pcHit.rotation.y = pc.rotation.y;
+    state.scene.add(pcHit);
+
+    const pcGlowProxy = { _ei: 0 };
+    Object.defineProperty(pcGlowProxy, 'emissiveIntensity', {
+      get() { return this._ei; },
+      set(v) {
+        this._ei = v;
+        pc.traverse((child) => {
+          if (child.isMesh && child.material) {
+            if (!child.material._cloned) {
+              child.material = child.material.clone();
+              child.material.emissive = child.material.emissive || new (child.material.color.constructor)(0x44aaff);
+              child.material.emissive.set(0x44aaff);
+              child.material._cloned = true;
+            }
+            child.material.emissiveIntensity = v;
+          }
+        });
+      },
+    });
+
+    state._pcHit = pcHit;
+    state._pcGlow = pcGlowProxy;
+  }, undefined, (err) => console.warn('Retro PC GLB load error:', err));
+
+  const waitForPC = setInterval(() => {
+    if (state._pcHit) {
+      clearInterval(waitForPC);
+      pcFrame.mesh = state._pcHit;
+      pcFrame.borderMat = state._pcGlow;
+      state.allFrameTargets.push(pcFrame);
+    }
+  }, 100);
+
+  state.allFrameTargets.push({
+    mesh: prevBtn,
+    borderMat: null,
+    target: null,
+    contentPos: null,
+    play: () => {
+      if (!pdfViewerGroup.visible || currentPage <= 1) return;
+      currentPage--;
+      renderPdfPage(currentPage);
+      state.activeFrame = pcFrame;
+    },
+    stop: () => {},
+    isPlaying: () => false,
+  });
+
+  state.allFrameTargets.push({
+    mesh: nextBtn,
+    borderMat: null,
+    target: null,
+    contentPos: null,
+    play: () => {
+      if (!pdfViewerGroup.visible || currentPage >= totalPages) return;
+      currentPage++;
+      renderPdfPage(currentPage);
+      state.activeFrame = pcFrame;
+    },
+    stop: () => {},
+    isPlaying: () => false,
   });
 
   // Dave portrait on east wall (plain photo, no border)
@@ -142,13 +374,20 @@ export function buildDadsHistoryRoom() {
 
   // Bottom row (anaglyphs)
   createAnaglyphStereo('/images/dad/Art/Stereos/StoneBridge2Stereo.png', 1.8,
-    new Vector3(westX, 1.2, -3.0), Math.PI / 2);
+    new Vector3(15.04, 1.20, -3.10), Math.PI / 2);
   createAnaglyphStereo('/images/dad/Art/Stereos/SpencerBeach.png', 0.8,
-    new Vector3(westX, 1.2, -1.0), Math.PI / 2);
+    new Vector3(15.04, 1.20, -1.40), Math.PI / 2);
   createAnaglyphStereo('/images/dad/Art/Stereos/TreeOnTheBeach.png', 0.8,
-    new Vector3(westX, 1.2, 1.0), Math.PI / 2);
+    new Vector3(15.04, 1.20, 1.85), Math.PI / 2);
   createAnaglyphStereo('/images/dad/Art/Stereos/MasonSpencerPool.png', 0.8,
-    new Vector3(15.04, 1.20, 2.80), Math.PI / 2);
+    new Vector3(15.04, 1.20, 3.25), Math.PI / 2);
+
+  // Museum-style text plaque on west wall (3D Stereo Art)
+  createMuseumPlaque([
+    'These digital scenes were composed in Bryce 3D (ca.\u00A01998), where I arranged imported photos, 3D objects, and landscapes into a virtual set. A camera within the scene was then shifted left and right to capture each eye\u2019s perspective, and the two renders were colorized red and cyan in Photoshop and merged into a single anaglyph image.',
+    'The photographs were captured with a digital camera mounted on a sliding dolly. Two shots, inches apart, were combined and colorized in Photoshop using the same technique.',
+    'Originally viewed through cardboard 3D glasses, these images are presented here in true stereoscopic 3D through VR.',
+  ], 1.5, new Vector3(15.04, 0.85, 0.20), Math.PI / 2, 'stereo_art', { canvasW: 800, canvasH: 800 });
 
   // Dave bust on marble pedestal (near east wall)
   gltfLoader.load('/models/pedestal.glb', (gltf) => {
@@ -173,7 +412,7 @@ export function buildDadsHistoryRoom() {
     const stereo = gltf.scene;
     stereo.name = 'stereo_system';
     stereo.scale.setScalar(3.0);
-    stereo.position.set(23.96, 1.15, -2.12);
+    stereo.position.set(23.98, 1.15, -2.28);
     stereo.rotation.y = -1.58;
     state.scene.add(stereo);
 
@@ -222,6 +461,7 @@ export function buildDadsHistoryRoom() {
     '/audio/dad/music/Against The Wind.mp3',
     '/audio/dad/music/Billy Joel - The Stranger - 09. Everybody Has A Dream - The Stranger (Reprise).mp3',
     "/audio/dad/music/You'll Accomp'ny Me.mp3",
+    '/audio/dad/music/11 - Seasons in the Sun.mp3',
   ];
 
   function shuffleArray(arr) {
@@ -236,7 +476,7 @@ export function buildDadsHistoryRoom() {
   let shuffled = shuffleArray(playlist);
   let trackIdx = 0;
   const stereoAudio = new Audio();
-  stereoAudio.preload = 'auto';
+  stereoAudio.preload = 'none';
 
   const artCanvas = document.createElement('canvas');
   artCanvas.width = 512;
@@ -381,10 +621,11 @@ export function buildDadsHistoryRoom() {
     stereoAudio.load();
     currentAlbumArt = null;
     currentArtist = '';
-    extractAlbumArt(shuffled[trackIdx]);
   }
 
   function playTrack() {
+    if (!stereoAudio.src) loadTrack(trackIdx);
+    extractAlbumArt(shuffled[trackIdx]);
     drawNowPlaying(filenameToTitle(shuffled[trackIdx]), currentAlbumArt);
     stereoAudio.play().catch((e) => console.warn('Stereo play failed:', e));
   }
@@ -400,7 +641,6 @@ export function buildDadsHistoryRoom() {
   }
 
   stereoAudio.addEventListener('ended', nextTrack);
-  loadTrack(0);
   drawStopped();
 
   // Now-playing display on east wall above the stereo
@@ -409,7 +649,7 @@ export function buildDadsHistoryRoom() {
     new MeshBasicMaterial({ map: artTex }),
   );
   artMesh.name = 'stereo_display';
-  artMesh.position.set(23.55, 1.60, -2.61);
+  artMesh.position.set(23.61, 1.60, -2.68);
   artMesh.rotation.y = -1.58;
   artMesh.scale.setScalar(0.386);
   state.scene.add(artMesh);
@@ -432,7 +672,7 @@ export function buildDadsHistoryRoom() {
     new MeshBasicMaterial({ map: skipTex }),
   );
   skipBtn.name = 'stereo_skip';
-  skipBtn.position.set(23.55, 1.35, -2.61);
+  skipBtn.position.set(23.58, 1.35, -2.66);
   skipBtn.rotation.y = -1.58;
   skipBtn.scale.setScalar(0.386);
   state.scene.add(skipBtn);

@@ -143,6 +143,75 @@ export function createBorderFrame(contentW, contentH, borderW) {
   return g;
 }
 
+export function createMuseumPlaque(paragraphs, displayW, pos, rotY, label, { canvasW, canvasH } = {}) {
+  const pw = canvasW || 512, ph = canvasH || 900;
+  const canvas = document.createElement('canvas');
+  canvas.width = pw;
+  canvas.height = ph;
+  const ctx = canvas.getContext('2d');
+
+  ctx.fillStyle = '#f0e8d8';
+  ctx.font = 'italic 32px Garamond, "Cormorant Garamond", "Palatino Linotype", "Book Antiqua", serif';
+  ctx.textBaseline = 'top';
+  const margin = 40;
+  const lineH = 44;
+  const paraGap = 34;
+  const maxW = pw - margin * 2;
+
+  function wrapText(text, x, startY) {
+    const words = text.split(' ');
+    let line = '';
+    let y = startY;
+    for (const word of words) {
+      const test = line + word + ' ';
+      if (ctx.measureText(test).width > maxW && line) {
+        ctx.fillText(line.trim(), x, y);
+        line = word + ' ';
+        y += lineH;
+      } else {
+        line = test;
+      }
+    }
+    if (line.trim()) { ctx.fillText(line.trim(), x, y); y += lineH; }
+    return y;
+  }
+
+  let curY = margin;
+  for (let i = 0; i < paragraphs.length; i++) {
+    curY = wrapText(paragraphs[i], margin, curY);
+    if (i < paragraphs.length - 1) curY += paraGap;
+  }
+
+  const tex = new CanvasTexture(canvas);
+  const displayH = displayW * (ph / pw);
+  const mesh = new Mesh(
+    new PlaneGeometry(displayW, displayH),
+    new MeshBasicMaterial({ map: tex, transparent: true }),
+  );
+  mesh.name = 'plaque:' + (label || 'museum');
+  mesh.position.copy(pos);
+  mesh.rotation.y = rotY;
+  state.scene.add(mesh);
+
+  const standoff = 1.5;
+  const target = new Vector3(
+    pos.x + Math.sin(rotY) * standoff,
+    1.6,
+    pos.z + Math.cos(rotY) * standoff,
+  );
+  state.allFrameTargets.push({
+    mesh,
+    borderMat: null,
+    target,
+    contentPos: pos.clone(),
+    play: null,
+    stop: null,
+    isPlaying: () => false,
+  });
+
+  return mesh;
+}
+
 function registerFrame(mesh, border, contentH, contentW, pos, rotY, play, stop, isPlaying) {
   const standoff = 1.5;
   const target = new Vector3(

@@ -120,6 +120,6 @@ export function buildMainRoom() {
     "Dave's Room",
     new Vector3(ROOM_W / 2 - 0.05, 1.0, -3),
     -Math.PI / 2,
-    new Vector3(HIST_X, 0, 0),
+    new Vector3(HIST_X, 1.6, 0),
   );
 }
