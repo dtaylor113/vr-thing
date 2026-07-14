@@ -4,8 +4,14 @@ import {
   Line,
   BufferGeometry,
   LineBasicMaterial,
+  PlaneGeometry,
+  MeshBasicMaterial,
+  Mesh,
+  CanvasTexture,
+  DoubleSide,
 } from 'three';
 import { XRHandModelFactory } from 'three/addons/webxr/XRHandModelFactory.js';
+import { XRControllerModelFactory } from 'three/addons/webxr/XRControllerModelFactory.js';
 import { state } from './state.js';
 import { isEditMode } from './editMode.js';
 
@@ -46,6 +52,16 @@ export function setupLocomotion() {
   const hand2 = renderer.xr.getHand(1);
   hand2.add(handModelFactory.createHandModel(hand2, 'mesh'));
   dolly.add(hand2);
+
+  const controllerModelFactory = new XRControllerModelFactory();
+
+  const grip0 = renderer.xr.getControllerGrip(0);
+  grip0.add(controllerModelFactory.createControllerModel(grip0));
+  dolly.add(grip0);
+
+  const grip1 = renderer.xr.getControllerGrip(1);
+  grip1.add(controllerModelFactory.createControllerModel(grip1));
+  dolly.add(grip1);
 
   const rayGeom = new BufferGeometry().setFromPoints([
     new Vector3(0, 0, 0),
@@ -131,13 +147,72 @@ export function handleControllerLocomotion(dt) {
       dolly.position.add(dir);
     }
 
-    if (buttons[4] && buttons[4].pressed) {
-      dolly.position.y += MOVE_SPEED * dt;
-    }
-    if (buttons[5] && buttons[5].pressed) {
-      dolly.position.y -= MOVE_SPEED * dt;
+    if (source.handedness === 'left') {
+      if (buttons[5] && buttons[5].pressed) {
+        dolly.position.y += MOVE_SPEED * dt;
+      }
+      if (buttons[4] && buttons[4].pressed) {
+        dolly.position.y -= MOVE_SPEED * dt;
+      }
     }
   }
 
   clampToRoom(dolly.position);
+}
+
+export function createVRLegend() {
+  const w = 512, h = 256;
+  const canvas = document.createElement('canvas');
+  canvas.width = w;
+  canvas.height = h;
+  const ctx = canvas.getContext('2d');
+
+  const r = 20;
+  ctx.beginPath();
+  ctx.moveTo(r, 0);
+  ctx.lineTo(w - r, 0);
+  ctx.quadraticCurveTo(w, 0, w, r);
+  ctx.lineTo(w, h - r);
+  ctx.quadraticCurveTo(w, h, w - r, h);
+  ctx.lineTo(r, h);
+  ctx.quadraticCurveTo(0, h, 0, h - r);
+  ctx.lineTo(0, r);
+  ctx.quadraticCurveTo(0, 0, r, 0);
+  ctx.closePath();
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.75)';
+  ctx.fill();
+
+  const lines = [
+    'Left Stick: Move',
+    'Y: Up  /  X: Down',
+    'Trigger: Select / Play',
+    'Floor: Click to Teleport',
+  ];
+
+  ctx.fillStyle = '#ffffff';
+  ctx.font = 'bold 34px sans-serif';
+  ctx.textBaseline = 'top';
+  const lineH = 48;
+  const startY = (h - lines.length * lineH) / 2;
+  for (let i = 0; i < lines.length; i++) {
+    ctx.fillText(lines[i], 32, startY + i * lineH);
+  }
+
+  const tex = new CanvasTexture(canvas);
+  const geom = new PlaneGeometry(0.3, 0.15);
+  const mat = new MeshBasicMaterial({
+    map: tex,
+    transparent: true,
+    opacity: 0.7,
+    side: DoubleSide,
+    depthTest: false,
+  });
+  const mesh = new Mesh(geom, mat);
+  mesh.renderOrder = 999;
+  mesh.position.set(0, 0.8, -0.4);
+  mesh.rotation.x = -0.45;
+  mesh.visible = false;
+
+  state.dolly.add(mesh);
+  return mesh;
 }

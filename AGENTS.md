@@ -31,12 +31,12 @@ vr-thing/
     main.js                  Orchestrator (~100 lines): creates scene, wires modules, render loop
     state.js                 Shared state object (scene, dolly, camera, renderer, arrays, activeFrame, roomBounds)
     room.js                  createRoom(), createDoor(), createExitButton(), room constants
-    content.js               makeTextTexture(), createBorderFrame(), createFramedPhoto(), createVideoScreen()
+    content.js               makeTextTexture(), createBorderFrame(), createFramedPhoto(), createVideoScreen(), createDepthWindow()
     interaction.js           Raycasting, click handlers, frame teleport+auto-play, hover effects, ray shortening
     locomotion.js            Joystick movement, hand models, controller setup, ray lines, camera clamping
     rooms/
-      mainRoom.js            Main room: wall labels, Kids walls content, GLTF frame, door to history
-      dadsHistory.js         Dad's History room: Childhood photo grid with audio, Before Laura, Wedding walls
+      mainRoom.js            Main room: wall labels, Kids walls content, GLTF frame, door to Dave's Room
+      dadsHistory.js         Dave's Room: Childhood photo grid with audio, Before Laura, Wedding walls
   originals/                 Unconvertible source files (e.g. SpencerAngel.AVI)
   public/                    Single source of truth for all served media (copied to dist/ on build)
     images/                  Photos
@@ -82,7 +82,7 @@ main.js
 ```
 
 ### state.js
-Thin mutable object holding references that multiple modules need: `scene`, `dolly`, `camera`, `renderer`, `controls`, and arrays `allFloors`, `allVideos`, `doorTargets`, `allExitBtns`, `allFrameTargets`. Also holds `activeFrame` (the currently playing frame, or null) and `roomBounds[]` (registered automatically by `createRoom`).
+Thin mutable object holding references that multiple modules need: `scene`, `dolly`, `camera`, `renderer`, `controls`, and arrays `allFloors`, `allVideos`, `doorTargets`, `allExitBtns`, `allFrameTargets`, `allDepthWindows`. Also holds `activeFrame` (the currently playing frame, or null) and `roomBounds[]` (registered automatically by `createRoom`).
 
 ### main.js (~100 lines)
 Entry point and orchestrator. Creates the WebGLRenderer, Scene, Camera, dolly Group. Populates `state`, then calls `buildMainRoom()` and `buildDadsHistoryRoom()`. Sets up locomotion and interaction. Runs the render loop which:
@@ -107,6 +107,8 @@ Exports constants `ROOM_W` (10), `ROOM_D` (10), `ROOM_H` (4).
 **`createFramedPhoto(src, photoW, photoH, pos, rotY, { audioSrc })`** -- Loads an image, wraps it in a border frame, adds a filename nameplate below. If `audioSrc` is provided, creates an HTML5 Audio object and adds a small speaker icon to the right of the frame to indicate audio is available. Clicking the frame teleports to it and auto-plays the audio.
 
 **`createVideoScreen(src, displayWidth, pos, rotY)`** -- Creates a video player with auto-detected aspect ratio (from video metadata), manual CanvasTexture updates (prevents stereo flicker), filename nameplate below, and robust thumbnail generation. No need to specify video dimensions -- the frame sizes itself automatically. Clicking the frame teleports and auto-plays. Registered in `state.allVideos`.
+
+**`createDepthWindow(colorSrc, depthSrc, windowW, windowH, pos, rotY)`** -- Creates a 3D parallax depth window. Loads a color photo and its grayscale depth map, uses a custom `ShaderMaterial` with vertex displacement on a 128x128-subdivided `PlaneGeometry`. The vertex shader displaces vertices along Z based on depth map brightness and shifts XY based on the viewer's camera offset (`uCameraOffset` uniform, updated each frame in the render loop), creating real-time parallax. Wrapped in a dark wood window frame. Registered in `state.allDepthWindows`.
 
 **Filename nameplates**: Every frame displays a label below it derived from the filename -- underscores become spaces, camelCase is split (e.g. `ReeseDoraBoots.mp4` → `"Reese Dora Boots"`), rendered in italic serif script font with decorative curly quotes.
 
@@ -141,16 +143,16 @@ Exports constants `ROOM_W` (10), `ROOM_D` (10), `ROOM_H` (4).
 ### rooms/mainRoom.js (~85 lines)
 **`buildMainRoom()`** -- Calls `createRoom()` with origin (0,0,0) and four themed walls:
 - **Kids** (back wall): 4 videos top row, 4 videos bottom row
-- **Mom/Dad** (right wall): GLTF frame model, door to Dad's History room
+- **Mom/Dad** (right wall): GLTF frame model, depth window (DaveLaura), door to Dave's Room
 - **Friends** (front wall): EXIT VR button
 - **Kids** (left wall): 5 more videos (2 rows)
 
 ### rooms/dadsHistory.js (~66 lines)
 Exports `HIST_X = 20` (imported by mainRoom.js for door targeting).
 
-**`buildDadsHistoryRoom()`** -- Calls `createRoom()` at offset x=20 with green-themed colors. Three themed walls:
+**`buildDadsHistoryRoom()`** -- Dave's Room. Calls `createRoom()` at offset x=20 with green-themed colors. Three themed walls:
 - **Childhood** (back wall): 12 photos in a 4x3 grid, `dadInArmchair` and `daveSwings` first. Photos with narration audio show an ear icon and auto-play when clicked.
-- **Before Laura** (right wall): Title only, content TBD.
+- **Before Laura** (right wall): Depth window (Dave_depth).
 - **Wedding** (left wall): Title only, content TBD.
 Adds an exit button and a door back to the main room on the front wall.
 

@@ -52,17 +52,17 @@ export function buildMainRoom() {
     new Vector3(lx, 2.7, -3), Math.PI / 2);
 
   createVideoScreen('/video/ReeseSinging.mp4', 0.8,
-    new Vector3(lx, 2.7, 0), Math.PI / 2);
+    new Vector3(lx, 2.7, -2), Math.PI / 2);
 
   createVideoScreen('/video/ReeseYoutubeVideo.MP4', 1.2,
     new Vector3(lx, 3.0, 3), Math.PI / 2);
 
   // Bottom row
   createVideoScreen('/video/MasonCrash.MP4', 1.2,
-    new Vector3(lx, 1.0, -2), Math.PI / 2);
+    new Vector3(lx, 1.0, -3), Math.PI / 2);
 
   createVideoScreen('/video/MasonCrazyNarration.MP4', 1.2,
-    new Vector3(lx, 1.0, 2), Math.PI / 2);
+    new Vector3(lx, 1.0, 3), Math.PI / 2);
 
   // 3D Picture frame + pedestal (Mom/Dad wall)
   const gltfLoader = new GLTFLoader();
@@ -70,7 +70,7 @@ export function buildMainRoom() {
   gltfLoader.load('/models/pedestal.glb', (gltf) => {
     const pedestal = gltf.scene;
     pedestal.scale.setScalar(2.0);
-    pedestal.position.set(3.55, 0.87, 0.95);
+    pedestal.position.set(3.55, 0.87, 2.95);
     pedestal.rotation.y = -2.35;
     state.scene.add(pedestal);
   });
@@ -78,7 +78,7 @@ export function buildMainRoom() {
   gltfLoader.load('/models/frame.glb', (gltf) => {
     const frame = gltf.scene;
     frame.scale.setScalar(0.8);
-    frame.position.set(4.05, 1.84, 0.45);
+    frame.position.set(4.05, 1.84, 2.45);
     frame.rotation.y = 1.5207963;
     state.scene.add(frame);
   });
@@ -115,9 +115,9 @@ export function buildMainRoom() {
   // EXIT VR button (South wall, center)
   createExitButton(new Vector3(0, 1.2, ROOM_D / 2 - 0.15), Math.PI);
 
-  // Door to Dad's History (Mom/Dad wall, left side when facing Kids)
+  // Door to Dave's Room (Mom/Dad wall, left side when facing Kids)
   createDoor(
-    "Dad's History",
+    "Dave's Room",
     new Vector3(ROOM_W / 2 - 0.05, 1.0, -3),
     -Math.PI / 2,
     new Vector3(HIST_X, 0, 0),

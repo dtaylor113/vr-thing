@@ -9,7 +9,7 @@ import {
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { VRButton } from 'three/addons/webxr/VRButton.js';
 import { state } from './state.js';
-import { setupLocomotion, handleControllerLocomotion, handleDesktopLocomotion, clampToRoom, RAY_MAX } from './locomotion.js';
+import { setupLocomotion, handleControllerLocomotion, handleDesktopLocomotion, clampToRoom, RAY_MAX, createVRLegend } from './locomotion.js';
 import { setupInteraction, updateHoverEffects, shortenRays } from './interaction.js';
 import { allVideosReady, onVideoLoadProgress } from './content.js';
 import { buildMainRoom } from './rooms/mainRoom.js';
@@ -49,6 +49,9 @@ setupInteraction(controller0, controller1);
 
 // ── Edit mode (desktop only) ──
 setupEditMode();
+
+// ── VR controller legend ──
+const vrLegend = createVRLegend();
 
 // ── Desktop controls ──
 const controls = new OrbitControls(camera, renderer.domElement);
@@ -113,6 +116,7 @@ renderer.setAnimationLoop(() => {
 
   const inVR = renderer.xr.isPresenting;
   for (const eb of state.allExitBtns) eb.visible = inVR;
+  if (vrLegend) vrLegend.visible = inVR;
 
   if (inVR) {
     handleControllerLocomotion(dt);

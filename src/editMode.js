@@ -71,6 +71,14 @@ function deselectObject() {
   updateHUD();
 }
 
+function getObjectLabel(obj) {
+  if (obj.name) return obj.name;
+  if (obj.userData?.src) return obj.userData.src;
+  if (obj.type === 'Mesh' && obj.geometry?.type) return `Mesh (${obj.geometry.type})`;
+  if (obj.type === 'Group') return `Group (${obj.children.length} children)`;
+  return obj.type || 'unknown';
+}
+
 function updateHUD() {
   if (!selected) {
     hudEl.style.display = 'none';
@@ -79,12 +87,15 @@ function updateHUD() {
   hudEl.style.display = 'block';
   const p = selected.position;
   const ry = selected.rotation.y;
+  const s = selected.scale.x;
+  const label = getObjectLabel(selected);
   hudEl.innerHTML =
-    `<b>Selected Object</b><br>` +
+    `<b>${label}</b><br>` +
     `x: ${p.x.toFixed(3)}<br>` +
     `y: ${p.y.toFixed(3)}<br>` +
     `z: ${p.z.toFixed(3)}<br>` +
     `rotY: ${ry.toFixed(7)}<br>` +
+    `scale: ${s.toFixed(3)}<br>` +
     `<span style="color:#888">${wallTangent ? 'wall-mounted' : 'free-standing'}</span>`;
 }
 
@@ -141,14 +152,27 @@ function onKeyDown(event) {
   if (event.code === 'Enter' && selected) {
     const p = selected.position;
     const ry = selected.rotation.y;
+    const s = selected.scale.x;
+    const label = getObjectLabel(selected);
     console.log(
-      `new Vector3(${p.x.toFixed(2)}, ${p.y.toFixed(2)}, ${p.z.toFixed(2)})  // rotY: ${ry}`,
+      `[${label}] new Vector3(${p.x.toFixed(2)}, ${p.y.toFixed(2)}, ${p.z.toFixed(2)})  // rotY: ${ry}, scale: ${s}`,
     );
     event.preventDefault();
     return;
   }
 
   if (!selected) return;
+
+  if (event.code === 'Equal' || event.code === 'Minus' || event.code === 'NumpadAdd' || event.code === 'NumpadSubtract') {
+    event.preventDefault();
+    const scaleFactor = event.shiftKey ? 1.01 : 1.1;
+    const grow = event.code === 'Equal' || event.code === 'NumpadAdd';
+    const factor = grow ? scaleFactor : 1 / scaleFactor;
+    selected.scale.multiplyScalar(factor);
+    if (helper) helper.update();
+    updateHUD();
+    return;
+  }
 
   if (event.code === 'BracketLeft' || event.code === 'BracketRight') {
     event.preventDefault();
@@ -162,8 +186,7 @@ function onKeyDown(event) {
   if (!event.code.startsWith('Arrow')) return;
 
   event.preventDefault();
-  const fine = event.shiftKey;
-  const speed = fine ? 0.01 : 0.05;
+  const speed = 0.05;
 
   if (wallTangent) {
     switch (event.code) {
@@ -189,11 +212,11 @@ function onKeyDown(event) {
         moveSelected(speed, 0, 0);
         break;
       case 'ArrowUp':
-        if (fine) moveSelected(0, 0.01, 0);
+        if (event.shiftKey) moveSelected(0, speed, 0);
         else moveSelected(0, 0, -speed);
         break;
       case 'ArrowDown':
-        if (fine) moveSelected(0, -0.01, 0);
+        if (event.shiftKey) moveSelected(0, -speed, 0);
         else moveSelected(0, 0, speed);
         break;
     }
