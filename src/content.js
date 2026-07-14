@@ -10,6 +10,7 @@ import {
   TextureLoader,
   SRGBColorSpace,
   CircleGeometry,
+  ShaderMaterial,
 } from 'three';
 import { state } from './state.js';
 
@@ -162,6 +163,7 @@ function registerFrame(mesh, border, contentH, contentW, pos, rotY, play, stop, 
 
 export function createFramedPhoto(src, photoW, photoH, pos, rotY, { audioSrc } = {}) {
   const group = new Group();
+  group.name = 'photo:' + src.split('/').pop();
 
   const border = createBorderFrame(photoW, photoH, 0.07);
   group.add(border);
@@ -223,6 +225,7 @@ export function createVideoScreen(src, displayWidth, pos, rotY) {
   vid.addEventListener('error', () => console.warn('Video error:', src, vid.error?.message));
 
   const group = new Group();
+  group.name = 'video:' + src.split('/').pop();
   group.position.copy(pos);
   group.rotation.y = rotY;
   state.scene.add(group);
@@ -311,5 +314,167 @@ export function createVideoScreen(src, displayWidth, pos, rotY) {
   videoLoadPromises.push(ready);
 
   return entry;
+}
+
+export function createStereoPair(leftSrc, rightSrc, displayWidth, pos, rotY, label) {
+  const loader = new TextureLoader();
+  const leftTex = loader.load(leftSrc);
+  leftTex.colorSpace = SRGBColorSpace;
+  const rightTex = loader.load(rightSrc);
+  rightTex.colorSpace = SRGBColorSpace;
+
+  const img = new Image();
+  img.src = leftSrc;
+  img.onload = () => {
+    const aspect = img.height / img.width;
+    const h = displayWidth * aspect;
+    const geom = new PlaneGeometry(displayWidth, h);
+
+    const leftEye = new Mesh(geom, new MeshBasicMaterial({ map: leftTex }));
+    leftEye.layers.set(1);
+
+    const rightEye = new Mesh(geom, new MeshBasicMaterial({ map: rightTex }));
+    rightEye.layers.set(2);
+
+    // Desktop fallback shows the left image
+    const flatView = new Mesh(geom, new MeshBasicMaterial({ map: leftTex }));
+    flatView.layers.set(0);
+
+    const border = createBorderFrame(displayWidth, h, 0.06);
+    const nameLabel = label || leftSrc.split('/').pop().replace(/Left/i, '').replace(/\.\w+$/, '');
+    const nameplate = makeNameplate(filenameToLabel(nameLabel), displayWidth);
+    nameplate.position.set(0, -(h / 2) - 0.2, 0.05);
+
+    const hitArea = new Mesh(
+      new PlaneGeometry(displayWidth + 0.14, h + 0.14),
+      new MeshBasicMaterial({ visible: false }),
+    );
+    hitArea.position.z = 0.12;
+
+    const group = new Group();
+    group.add(leftEye);
+    group.add(rightEye);
+    group.add(flatView);
+    group.add(border);
+    group.add(nameplate);
+    group.add(hitArea);
+    group.position.copy(pos);
+    group.rotation.y = rotY;
+    group.name = 'stereo_' + nameLabel;
+    state.scene.add(group);
+
+    registerFrame(hitArea, border, h, displayWidth, pos, rotY);
+
+    function updateVisibility() {
+      const inVR = state.renderer?.xr?.isPresenting;
+      flatView.visible = !inVR;
+      leftEye.visible = inVR;
+      rightEye.visible = inVR;
+    }
+    updateVisibility();
+
+    if (!state._anaglyphUpdaters) state._anaglyphUpdaters = [];
+    state._anaglyphUpdaters.push(updateVisibility);
+  };
+}
+
+const anaglyphVertexShader = `
+  varying vec2 vUv;
+  void main() {
+    vUv = uv;
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+  }
+`;
+
+const anaglyphLeftFragShader = `
+  uniform sampler2D uTexture;
+  varying vec2 vUv;
+  void main() {
+    vec4 c = texture2D(uTexture, vUv);
+    float lum = c.r;
+    gl_FragColor = vec4(lum, lum * 0.7 + c.g * 0.3, lum * 0.7 + c.b * 0.3, 1.0);
+  }
+`;
+
+const anaglyphRightFragShader = `
+  uniform sampler2D uTexture;
+  varying vec2 vUv;
+  void main() {
+    vec4 c = texture2D(uTexture, vUv);
+    float lum = (c.g + c.b) * 0.5;
+    gl_FragColor = vec4(lum * 0.7 + c.r * 0.3, lum * 0.7 + c.g * 0.3, lum * 0.7 + c.b * 0.3, 1.0);
+  }
+`;
+
+export function createAnaglyphStereo(src, displayWidth, pos, rotY) {
+  const loader = new TextureLoader();
+  const tex = loader.load(src);
+  tex.colorSpace = SRGBColorSpace;
+
+  const img = new Image();
+  img.src = src;
+  img.onload = () => {
+    const aspect = img.height / img.width;
+    const h = displayWidth * aspect;
+    const geom = new PlaneGeometry(displayWidth, h);
+
+    const leftMat = new ShaderMaterial({
+      uniforms: { uTexture: { value: tex } },
+      vertexShader: anaglyphVertexShader,
+      fragmentShader: anaglyphLeftFragShader,
+    });
+    const rightMat = new ShaderMaterial({
+      uniforms: { uTexture: { value: tex } },
+      vertexShader: anaglyphVertexShader,
+      fragmentShader: anaglyphRightFragShader,
+    });
+
+    // Fallback flat material for desktop (shows original anaglyph)
+    const flatMat = new MeshBasicMaterial({ map: tex });
+
+    const leftEye = new Mesh(geom, leftMat);
+    leftEye.layers.set(1);
+
+    const rightEye = new Mesh(geom, rightMat);
+    rightEye.layers.set(2);
+
+    const flatView = new Mesh(geom, flatMat);
+    flatView.layers.set(0);
+
+    const border = createBorderFrame(displayWidth, h, 0.06);
+    const nameplate = makeNameplate(filenameToLabel(src), displayWidth);
+    nameplate.position.set(0, -(h / 2) - 0.2, 0.05);
+
+    const hitArea = new Mesh(
+      new PlaneGeometry(displayWidth + 0.14, h + 0.14),
+      new MeshBasicMaterial({ visible: false }),
+    );
+    hitArea.position.z = 0.12;
+
+    const group = new Group();
+    group.add(leftEye);
+    group.add(rightEye);
+    group.add(flatView);
+    group.add(border);
+    group.add(nameplate);
+    group.add(hitArea);
+    group.position.copy(pos);
+    group.rotation.y = rotY;
+    group.name = 'anaglyph_' + src.split('/').pop().replace(/\.\w+$/, '');
+    state.scene.add(group);
+
+    registerFrame(hitArea, border, h, displayWidth, pos, rotY);
+
+    function updateVisibility() {
+      const inVR = state.renderer?.xr?.isPresenting;
+      flatView.visible = !inVR;
+      leftEye.visible = inVR;
+      rightEye.visible = inVR;
+    }
+    updateVisibility();
+
+    if (!state._anaglyphUpdaters) state._anaglyphUpdaters = [];
+    state._anaglyphUpdaters.push(updateVisibility);
+  };
 }
 

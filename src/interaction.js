@@ -90,10 +90,12 @@ function tryFrameTeleport(isDesktop) {
         stopActiveFrame();
       } else {
         stopActiveFrame();
-        if (isDesktop) {
-          desktopTeleport(frame.target, frame.contentPos);
-        } else {
-          state.dolly.position.copy(frame.target);
+        if (frame.target) {
+          if (isDesktop) {
+            desktopTeleport(frame.target, frame.contentPos);
+          } else {
+            state.dolly.position.copy(frame.target);
+          }
         }
         if (frame.play) {
           frame.play();

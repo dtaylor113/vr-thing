@@ -52,14 +52,14 @@ export function buildMainRoom() {
     new Vector3(lx, 2.7, -3), Math.PI / 2);
 
   createVideoScreen('/video/ReeseSinging.mp4', 0.8,
-    new Vector3(lx, 2.7, -2), Math.PI / 2);
+    new Vector3(-4.96, 2.70, 1.05), Math.PI / 2);
 
   createVideoScreen('/video/ReeseYoutubeVideo.MP4', 1.2,
     new Vector3(lx, 3.0, 3), Math.PI / 2);
 
   // Bottom row
   createVideoScreen('/video/MasonCrash.MP4', 1.2,
-    new Vector3(lx, 1.0, -3), Math.PI / 2);
+    new Vector3(-4.96, 1.45, -1.00), Math.PI / 2);
 
   createVideoScreen('/video/MasonCrazyNarration.MP4', 1.2,
     new Vector3(lx, 1.0, 3), Math.PI / 2);
@@ -91,10 +91,10 @@ export function buildMainRoom() {
     new Vector3(-3.5, 3.0, sz), Math.PI);
 
   createVideoScreen('/video/MasonsGeckoBirthday.mp4', 1.2,
-    new Vector3(-1.5, 3.0, sz), Math.PI);
+    new Vector3(-1.15, 3.00, sz), Math.PI);
 
   createVideoScreen('/video/MasonLamb.mp4', 1.2,
-    new Vector3(1.5, 3.0, sz), Math.PI);
+    new Vector3(1.25, 3.00, sz), Math.PI);
 
   createVideoScreen('/video/OldeHomeDayBattle.mp4', 1.2,
     new Vector3(3.5, 3.0, sz), Math.PI);
@@ -104,10 +104,10 @@ export function buildMainRoom() {
     new Vector3(-3.5, 1.2, sz), Math.PI);
 
   createVideoScreen('/video/ReeseDance.mp4', 1.2,
-    new Vector3(-1.5, 1.2, sz), Math.PI);
+    new Vector3(-1.20, 1.20, sz), Math.PI);
 
   createVideoScreen('/video/SpencerMasonDisneyPool.mp4', 1.2,
-    new Vector3(1.5, 1.2, sz), Math.PI);
+    new Vector3(1.30, 1.20, sz), Math.PI);
 
   createVideoScreen('/video/BabyReese.mp4', 1.2,
     new Vector3(3.5, 1.2, sz), Math.PI);

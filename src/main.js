@@ -117,6 +117,7 @@ renderer.setAnimationLoop(() => {
   const inVR = renderer.xr.isPresenting;
   for (const eb of state.allExitBtns) eb.visible = inVR;
   if (vrLegend) vrLegend.visible = inVR;
+  if (state._anaglyphUpdaters) for (const fn of state._anaglyphUpdaters) fn();
 
   if (inVR) {
     handleControllerLocomotion(dt);

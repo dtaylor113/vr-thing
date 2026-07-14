@@ -1,5 +1,5 @@
 import {
-  Raycaster, Vector2, Vector3, BoxHelper, Color, Group,
+  Raycaster, Vector2, Vector3, BoxHelper, Color, Group, Plane,
 } from 'three';
 import { state } from './state.js';
 
@@ -11,9 +11,12 @@ let hudEl = null;
 let bannerEl = null;
 let navEl = null;
 let editEl = null;
+let dragging = false;
+let dragOffset = new Vector3();
 
 const raycaster = new Raycaster();
 const mouse = new Vector2();
+const dragPlane = new Plane(new Vector3(0, 1, 0), 0);
 
 export function isEditMode() { return active; }
 
@@ -31,6 +34,18 @@ function isDescendant(child, ancestor) {
     if (c === ancestor) return true;
     c = c.parent;
   }
+  return false;
+}
+
+function isRoomStructure(obj) {
+  if (state.allFloors.includes(obj)) return true;
+  if (obj.name === 'floor' || obj.name === 'exitBtn') return true;
+  // Walls, ceilings, and lights are plain Meshes with no name directly on the scene
+  if (obj.isMesh && !obj.name && obj.parent === state.scene) {
+    const geo = obj.geometry?.type;
+    if (geo === 'PlaneGeometry' || geo === 'BoxGeometry') return true;
+  }
+  if (obj.isLight || obj.isSpotLight || obj.isPointLight) return true;
   return false;
 }
 
@@ -108,13 +123,17 @@ function moveSelected(dx, dy, dz) {
   updateHUD();
 }
 
-function onEditClick(event) {
-  if (!active || state.renderer.xr.isPresenting) return;
-
+function updateMouse(event) {
   mouse.x = (event.clientX / state.renderer.domElement.clientWidth) * 2 - 1;
   mouse.y = -(event.clientY / state.renderer.domElement.clientHeight) * 2 + 1;
   raycaster.setFromCamera(mouse, state.camera);
+}
 
+function onEditMouseDown(event) {
+  if (!active || state.renderer.xr.isPresenting) return;
+  if (event.button !== 0) return;
+
+  updateMouse(event);
   const hits = raycaster.intersectObjects(state.scene.children, true);
 
   for (const hit of hits) {
@@ -123,12 +142,44 @@ function onEditClick(event) {
 
     const top = findTopGroup(hit.object);
     if (top === state.dolly || top === helper) continue;
+    if (isRoomStructure(top) || isRoomStructure(hit.object)) continue;
 
-    selectObject(top);
+    if (top === selected) {
+      // Start dragging the already-selected object
+      dragPlane.constant = -selected.position.y;
+      const intersection = new Vector3();
+      raycaster.ray.intersectPlane(dragPlane, intersection);
+      dragOffset.subVectors(selected.position, intersection);
+      dragging = true;
+      state.controls.enabled = false;
+      event.preventDefault();
+    } else {
+      selectObject(top);
+    }
     return;
   }
 
   deselectObject();
+}
+
+function onEditMouseMove(event) {
+  if (!dragging || !selected) return;
+
+  updateMouse(event);
+  const intersection = new Vector3();
+  if (raycaster.ray.intersectPlane(dragPlane, intersection)) {
+    selected.position.x = intersection.x + dragOffset.x;
+    selected.position.z = intersection.z + dragOffset.z;
+    if (helper) helper.update();
+    updateHUD();
+  }
+}
+
+function onEditMouseUp() {
+  if (dragging) {
+    dragging = false;
+    state.controls.enabled = true;
+  }
 }
 
 function onKeyDown(event) {
@@ -239,5 +290,8 @@ export function setupEditMode() {
   editEl = document.getElementById('controls-edit');
 
   window.addEventListener('keydown', onKeyDown);
-  state.renderer.domElement.addEventListener('click', onEditClick);
+  const canvas = state.renderer.domElement;
+  canvas.addEventListener('mousedown', onEditMouseDown);
+  canvas.addEventListener('mousemove', onEditMouseMove);
+  canvas.addEventListener('mouseup', onEditMouseUp);
 }
