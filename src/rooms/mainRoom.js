@@ -13,7 +13,18 @@ export function buildMainRoom() {
     { label: 'Mom / Dad',         x: ROOM_W / 2, z: 0,           w: ROOM_D, ry: -Math.PI / 2 },
     { label: '',                  x: 0,          z: ROOM_D / 2,  w: ROOM_W, ry: Math.PI },
     { label: '',                  x: -ROOM_W / 2, z: 0,          w: ROOM_D, ry: Math.PI / 2 },
-  ], { floor: 0x2a2a3a, wall: 0x3a3a4e, ceiling: 0x222233 });
+  ], { floor: 0xffffff, wall: 0xffffff, ceiling: 0x222233 }, {
+    floor: {
+      color: '/textures/plank_flooring/plank_flooring_04_diff_1k.jpg',
+      repeatX: 4, repeatY: 4,
+    },
+    wall: {
+      color: '/textures/redish-fabric/Fabric002_1K-JPG_Color.jpg',
+      normal: '/textures/redish-fabric/Fabric002_1K-JPG_NormalGL.jpg',
+      roughness: '/textures/redish-fabric/Fabric002_1K-JPG_Roughness.jpg',
+      repeatX: 6, repeatY: 3,
+    },
+  });
 
   // Back wall "Kids" (z = -5)
   const kz = -ROOM_D / 2 + 0.04;

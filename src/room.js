@@ -10,9 +10,23 @@ import {
   PlaneGeometry,
   DoubleSide,
   SpotLight,
+  TextureLoader,
+  RepeatWrapping,
+  SRGBColorSpace,
 } from 'three';
 import { state } from './state.js';
 import { makeTextTexture } from './content.js';
+
+const texLoader = new TextureLoader();
+
+function loadTiledTexture(path, repeatX, repeatY, isSRGB = false) {
+  const tex = texLoader.load(path);
+  tex.wrapS = RepeatWrapping;
+  tex.wrapT = RepeatWrapping;
+  tex.repeat.set(repeatX, repeatY);
+  if (isSRGB) tex.colorSpace = SRGBColorSpace;
+  return tex;
+}
 
 export const ROOM_W = 10;
 export const ROOM_D = 10;
@@ -26,14 +40,19 @@ const defaultColors = { floor: 0x2a2a3a, wall: 0x3a3a4e, ceiling: 0x222233 };
  * colors: optional { floor, wall, ceiling } hex colors.
  * Returns { floor }.
  */
-export function createRoom(origin, wallDefs, colors = defaultColors) {
+export function createRoom(origin, wallDefs, colors = defaultColors, textures = {}) {
   const { scene } = state;
   const c = { ...defaultColors, ...colors };
 
-  const floor = new Mesh(
-    new PlaneGeometry(ROOM_W, ROOM_D),
-    new MeshStandardMaterial({ color: c.floor, roughness: 0.8 }),
-  );
+  const floorMat = new MeshStandardMaterial({ color: c.floor, roughness: 0.8 });
+  if (textures.floor) {
+    const t = textures.floor;
+    const rx = t.repeatX || 4, ry = t.repeatY || 4;
+    floorMat.map = loadTiledTexture(t.color, rx, ry, true);
+    if (t.normal) floorMat.normalMap = loadTiledTexture(t.normal, rx, ry);
+    if (t.roughness) floorMat.roughnessMap = loadTiledTexture(t.roughness, rx, ry);
+  }
+  const floor = new Mesh(new PlaneGeometry(ROOM_W, ROOM_D), floorMat);
   floor.rotation.x = -Math.PI / 2;
   floor.position.set(origin.x, origin.y, origin.z);
   floor.receiveShadow = true;
@@ -41,19 +60,22 @@ export function createRoom(origin, wallDefs, colors = defaultColors) {
   scene.add(floor);
   state.allFloors.push(floor);
 
-  const ceiling = new Mesh(
-    new PlaneGeometry(ROOM_W, ROOM_D),
-    new MeshStandardMaterial({ color: c.ceiling, roughness: 1.0 }),
-  );
+  const ceilingMat = new MeshStandardMaterial({ color: c.ceiling, roughness: 1.0 });
+  const ceiling = new Mesh(new PlaneGeometry(ROOM_W, ROOM_D), ceilingMat);
   ceiling.rotation.x = Math.PI / 2;
   ceiling.position.set(origin.x, ROOM_H + origin.y, origin.z);
   scene.add(ceiling);
 
   wallDefs.forEach((d) => {
-    const wall = new Mesh(
-      new PlaneGeometry(d.w, ROOM_H),
-      new MeshStandardMaterial({ color: c.wall, roughness: 0.9, side: DoubleSide }),
-    );
+    const wallMat = new MeshStandardMaterial({ color: c.wall, roughness: 0.9, side: DoubleSide });
+    if (textures.wall) {
+      const t = textures.wall;
+      const rx = t.repeatX || 4, ry = t.repeatY || 2;
+      wallMat.map = loadTiledTexture(t.color, rx, ry, true);
+      if (t.normal) wallMat.normalMap = loadTiledTexture(t.normal, rx, ry);
+      if (t.roughness) wallMat.roughnessMap = loadTiledTexture(t.roughness, rx, ry);
+    }
+    const wall = new Mesh(new PlaneGeometry(d.w, ROOM_H), wallMat);
     wall.position.set(d.x, ROOM_H / 2 + origin.y, d.z);
     wall.rotation.y = d.ry;
     scene.add(wall);

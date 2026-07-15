@@ -37,7 +37,19 @@ export function buildDadsHistoryRoom() {
     { label: '',               x: HIST_X + ROOM_W / 2, z: 0,           w: ROOM_D, ry: -Math.PI / 2 },
     { label: 'Digital Art',    x: HIST_X,              z: ROOM_D / 2,  w: ROOM_W, ry: Math.PI },
     { label: '3D Stereo Art', x: HIST_X - ROOM_W / 2, z: 0,           w: ROOM_D, ry: Math.PI / 2 },
-  ], { floor: 0x2a3a2a, wall: 0x3a4e3a, ceiling: 0x223322 });
+  ], { floor: 0xffffff, wall: 0xffffff, ceiling: 0x223322 }, {
+    floor: {
+      color: '/textures/wood-flooring/WoodFloor064_1K-PNG_Color.png',
+      normal: '/textures/wood-flooring/WoodFloor064_1K-PNG_NormalGL.png',
+      roughness: '/textures/wood-flooring/WoodFloor064_1K-PNG_Roughness.png',
+      repeatX: 4, repeatY: 4,
+    },
+    wall: {
+      color: '/textures/book-pattern-fabric/book_pattern_col1_1k.png',
+      roughness: '/textures/book-pattern-fabric/book_pattern_rough_1k.jpg',
+      repeatX: 6, repeatY: 3,
+    },
+  });
 
   // Childhood photo grid (back wall, z = -5)
   const FRAME_MAX = 0.8;
