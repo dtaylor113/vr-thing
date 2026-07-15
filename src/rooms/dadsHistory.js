@@ -2,7 +2,7 @@ import { Group, Vector3, TextureLoader, PlaneGeometry, Box3, BoxGeometry, MeshBa
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import jsmediatags from 'jsmediatags';
 import { createRoom, createDoor, createExitButton, ROOM_W, ROOM_D } from '../room.js';
-import { createFramedPhoto, createAnaglyphStereo, createStereoPair, createMuseumPlaque } from '../content.js';
+import { createFramedPhoto, createVideoScreen, createAnaglyphStereo, createStereoPair, createMuseumPlaque } from '../content.js';
 import { state } from '../state.js';
 import * as pdfjsLib from 'pdfjs-dist';
 import pdfjsWorker from 'pdfjs-dist/build/pdf.worker.mjs?url';
@@ -128,16 +128,18 @@ export function buildDadsHistoryRoom() {
 
   const pdfViewerGroup = new Group();
   pdfViewerGroup.name = 'pdf_viewer';
+  pdfViewerGroup.position.set(23.30, 2.20, -0.01);
+  pdfViewerGroup.rotation.y = -1.7;
   pdfViewerGroup.visible = false;
 
   const pdfDisplayW = 1.2;
   const pdfDisplayH = 1.6;
 
   const pdfBg = new Mesh(
-    new PlaneGeometry(pdfDisplayW + 0.15, pdfDisplayH + 0.4),
-    new MeshBasicMaterial({ color: 0x111111 }),
+    new PlaneGeometry(pdfDisplayW + 0.06, pdfDisplayH + 0.06),
+    new MeshBasicMaterial({ color: 0x111111, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 }),
   );
-  pdfBg.position.z = -0.01;
+  pdfBg.position.z = -0.005;
   pdfViewerGroup.add(pdfBg);
 
   const pdfDisplay = new Mesh(
@@ -167,7 +169,7 @@ export function buildDadsHistoryRoom() {
     new PlaneGeometry(0.5, 0.12),
     new MeshBasicMaterial({ map: counterTex }),
   );
-  counterMesh.position.set(0, -(pdfDisplayH / 2) - 0.12, 0);
+  counterMesh.position.set(0, -(pdfDisplayH / 2) - 0.10, 0.02);
   pdfViewerGroup.add(counterMesh);
 
   const prevCanvas = document.createElement('canvas');
@@ -177,7 +179,7 @@ export function buildDadsHistoryRoom() {
   prevCtx.fillStyle = '#333';
   prevCtx.fillRect(0, 0, 128, 64);
   prevCtx.fillStyle = '#ffd700';
-  prevCtx.font = 'bold 32px sans-serif';
+  prevCtx.font = 'bold 22px sans-serif';
   prevCtx.textAlign = 'center';
   prevCtx.textBaseline = 'middle';
   prevCtx.fillText('\u25C0 Prev', 64, 32);
@@ -186,7 +188,7 @@ export function buildDadsHistoryRoom() {
     new PlaneGeometry(0.3, 0.12),
     new MeshBasicMaterial({ map: prevTex }),
   );
-  prevBtn.position.set(-0.35, -(pdfDisplayH / 2) - 0.12, 0);
+  prevBtn.position.set(-0.02, -(pdfDisplayH / 2) - 0.24, 0.02);
   pdfViewerGroup.add(prevBtn);
 
   const nextCanvas = document.createElement('canvas');
@@ -196,7 +198,7 @@ export function buildDadsHistoryRoom() {
   nextCtx.fillStyle = '#333';
   nextCtx.fillRect(0, 0, 128, 64);
   nextCtx.fillStyle = '#ffd700';
-  nextCtx.font = 'bold 32px sans-serif';
+  nextCtx.font = 'bold 22px sans-serif';
   nextCtx.textAlign = 'center';
   nextCtx.textBaseline = 'middle';
   nextCtx.fillText('Next \u25B6', 64, 32);
@@ -205,21 +207,53 @@ export function buildDadsHistoryRoom() {
     new PlaneGeometry(0.3, 0.12),
     new MeshBasicMaterial({ map: nextTex }),
   );
-  nextBtn.position.set(0.35, -(pdfDisplayH / 2) - 0.12, 0);
+  nextBtn.position.set(0.32, -(pdfDisplayH / 2) - 0.24, 0.02);
   pdfViewerGroup.add(nextBtn);
 
-  const pcRotY = -1.7;
-  pdfViewerGroup.position.set(
-    23.95 + Math.sin(pcRotY) * 0.5,
-    2.2,
-    -1.14 + Math.cos(pcRotY) * 0.5,
+  const rewindCanvas = document.createElement('canvas');
+  rewindCanvas.width = 128;
+  rewindCanvas.height = 64;
+  const rewindCtx = rewindCanvas.getContext('2d');
+  rewindCtx.fillStyle = '#333';
+  rewindCtx.fillRect(0, 0, 128, 64);
+  rewindCtx.fillStyle = '#ffd700';
+  rewindCtx.font = 'bold 22px sans-serif';
+  rewindCtx.textAlign = 'center';
+  rewindCtx.textBaseline = 'middle';
+  rewindCtx.fillText('\u23EE Pg 1', 64, 32);
+  const rewindTex = new CanvasTexture(rewindCanvas);
+  const rewindBtn = new Mesh(
+    new PlaneGeometry(0.3, 0.12),
+    new MeshBasicMaterial({ map: rewindTex }),
   );
-  pdfViewerGroup.rotation.y = pcRotY;
+  rewindBtn.position.set(-0.36, -(pdfDisplayH / 2) - 0.24, 0.02);
+  pdfViewerGroup.add(rewindBtn);
+
+  const closeCanvas = document.createElement('canvas');
+  closeCanvas.width = 64;
+  closeCanvas.height = 64;
+  const closeCtx = closeCanvas.getContext('2d');
+  closeCtx.fillStyle = '#cc0000';
+  closeCtx.fillRect(0, 0, 64, 64);
+  closeCtx.fillStyle = '#fff';
+  closeCtx.font = 'bold 40px sans-serif';
+  closeCtx.textAlign = 'center';
+  closeCtx.textBaseline = 'middle';
+  closeCtx.fillText('\u2715', 32, 32);
+  const closeTex = new CanvasTexture(closeCanvas);
+  const closeBtn = new Mesh(
+    new PlaneGeometry(0.12, 0.12),
+    new MeshBasicMaterial({ map: closeTex }),
+  );
+  closeBtn.position.set(pdfDisplayW / 2 + 0.02, pdfDisplayH / 2 + 0.02, 0.02);
+  pdfViewerGroup.add(closeBtn);
+
+  const pcRotY = -1.7;
   state.scene.add(pdfViewerGroup);
 
   async function loadPdf() {
     if (pdfDoc) return;
-    const task = pdfjsLib.getDocument("/images/dad/Dave Taylor's GUI Portfolio.pdf");
+    const task = pdfjsLib.getDocument({ url: "/images/dad/Dave Taylor\u2019s GUI Portfolio.pdf" });
     pdfDoc = await task.promise;
     totalPages = pdfDoc.numPages;
   }
@@ -227,12 +261,17 @@ export function buildDadsHistoryRoom() {
   async function renderPdfPage(pageNum) {
     if (!pdfDoc) return;
     const page = await pdfDoc.getPage(pageNum);
-    const viewport = page.getViewport({ scale: 2.0 });
-    pdfCanvas.width = viewport.width;
-    pdfCanvas.height = viewport.height;
+    const baseViewport = page.getViewport({ scale: 1.0 });
+    const scale = Math.min(1024 / baseViewport.width, 1400 / baseViewport.height);
+    const viewport = page.getViewport({ scale });
     pdfCtx.fillStyle = '#fff';
-    pdfCtx.fillRect(0, 0, pdfCanvas.width, pdfCanvas.height);
+    pdfCtx.fillRect(0, 0, 1024, 1400);
+    const offsetX = (1024 - viewport.width) / 2;
+    const offsetY = (1400 - viewport.height) / 2;
+    pdfCtx.save();
+    pdfCtx.translate(offsetX, offsetY);
     await page.render({ canvasContext: pdfCtx, viewport }).promise;
+    pdfCtx.restore();
     pdfTex.needsUpdate = true;
     updateCounter();
   }
@@ -241,21 +280,89 @@ export function buildDadsHistoryRoom() {
     mesh: null,
     borderMat: null,
     target: new Vector3(
-      23.95 + Math.sin(pcRotY) * 1.5,
+      23.30 + Math.sin(pcRotY) * 1.5,
       1.6,
-      -1.14 + Math.cos(pcRotY) * 1.5,
+      -0.01 + Math.cos(pcRotY) * 1.5,
     ),
-    contentPos: new Vector3(23.95, 1.15, -1.14),
+    contentPos: new Vector3(23.30, 2.20, -0.01),
     play: async () => {
       pdfViewerGroup.visible = true;
+      showPdfVideos(true);
       await loadPdf();
       renderPdfPage(currentPage);
     },
     stop: () => {
       pdfViewerGroup.visible = false;
+      showPdfVideos(false);
     },
     isPlaying: () => pdfViewerGroup.visible,
   };
+
+  // Hackathon videos flanking PDF viewer (hidden until viewer opens)
+  const pdfViewerPos = new Vector3(23.30, 2.20, -0.01);
+  const perpX = Math.cos(pcRotY);
+  const perpZ = -Math.sin(pcRotY);
+  const sideOffset = 1.4;
+  createVideoScreen('/video/Dave/DavesHackathon_2022.mp4', 1.4,
+    new Vector3(pdfViewerPos.x - perpX * sideOffset, pdfViewerPos.y, pdfViewerPos.z - perpZ * sideOffset), pcRotY, { borderWidth: 0.03 });
+  createVideoScreen('/video/Dave/DavesHackathon2025.mp4', 1.4,
+    new Vector3(pdfViewerPos.x + perpX * sideOffset, pdfViewerPos.y, pdfViewerPos.z + perpZ * sideOffset), pcRotY, { borderWidth: 0.03 });
+
+  const pdfVideoNames = ['video:DavesHackathon_2022.mp4', 'video:DavesHackathon2025.mp4'];
+  function showPdfVideos(visible) {
+    for (const name of pdfVideoNames) {
+      const obj = state.scene.getObjectByName(name);
+      if (!obj) continue;
+      if (!visible) {
+        // Don't hide if this video is actively playing
+        const fname = name.replace('video:', '');
+        const entry = state.allVideos.find(v => v.vid.src && v.vid.src.includes(fname));
+        if (entry && entry.playing) continue;
+      }
+      obj.visible = visible;
+    }
+  }
+  // Hide initially, tag as keepActiveFrame, and add skip buttons
+  setTimeout(() => {
+    showPdfVideos(false);
+    for (const name of pdfVideoNames) {
+      const obj = state.scene.getObjectByName(name);
+      if (!obj) continue;
+      const fname = name.replace('video:', '');
+      const vidEntry = state.allVideos.find(v => v.vid.src && v.vid.src.includes(fname));
+
+      for (const f of state.allFrameTargets) {
+        if (obj.getObjectByProperty('uuid', f.mesh.uuid)) {
+          f.keepActiveFrame = true;
+          f.target = null;
+        }
+      }
+
+      if (!vidEntry) continue;
+      const vid = vidEntry.vid;
+      const skipCanvas = document.createElement('canvas');
+      skipCanvas.width = 128; skipCanvas.height = 48;
+      const ctx = skipCanvas.getContext('2d');
+      ctx.fillStyle = '#222'; ctx.fillRect(0, 0, 128, 48);
+      ctx.fillStyle = '#ffd700'; ctx.font = 'bold 20px sans-serif';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText('\u25B6\u25B6 +1 min', 64, 24);
+      const skipTex = new CanvasTexture(skipCanvas);
+      const skipBtn = new Mesh(new PlaneGeometry(0.3, 0.1), new MeshBasicMaterial({ map: skipTex }));
+
+      const box = new Box3().setFromObject(obj);
+      skipBtn.position.set(0, box.min.y - obj.position.y - 0.35, 0.02);
+      obj.add(skipBtn);
+
+      state.allFrameTargets.push({
+        mesh: skipBtn, borderMat: null, target: null, contentPos: null,
+        isSubControl: true, keepActiveFrame: true,
+        play: () => { vid.currentTime = Math.min(vid.currentTime + 60, vid.duration - 0.5); },
+        stop: () => {},
+        isPlaying: () => !vid.paused && !vid.ended,
+      });
+    }
+  }, 2000);
 
   gltfLoader.load('/models/retro-pc.glb', (gltf) => {
     const pc = gltf.scene;
@@ -311,14 +418,16 @@ export function buildDadsHistoryRoom() {
     borderMat: null,
     target: null,
     contentPos: null,
+    isSubControl: true,
     play: () => {
-      if (!pdfViewerGroup.visible || currentPage <= 1) return;
-      currentPage--;
-      renderPdfPage(currentPage);
+      if (currentPage > 1) {
+        currentPage--;
+        renderPdfPage(currentPage);
+      }
       state.activeFrame = pcFrame;
     },
     stop: () => {},
-    isPlaying: () => false,
+    isPlaying: () => pdfViewerGroup.visible,
   });
 
   state.allFrameTargets.push({
@@ -326,14 +435,46 @@ export function buildDadsHistoryRoom() {
     borderMat: null,
     target: null,
     contentPos: null,
+    isSubControl: true,
     play: () => {
-      if (!pdfViewerGroup.visible || currentPage >= totalPages) return;
-      currentPage++;
+      if (currentPage < totalPages) {
+        currentPage++;
+        renderPdfPage(currentPage);
+      }
+      state.activeFrame = pcFrame;
+    },
+    stop: () => {},
+    isPlaying: () => pdfViewerGroup.visible,
+  });
+
+  state.allFrameTargets.push({
+    mesh: rewindBtn,
+    borderMat: null,
+    target: null,
+    contentPos: null,
+    isSubControl: true,
+    play: () => {
+      currentPage = 1;
       renderPdfPage(currentPage);
       state.activeFrame = pcFrame;
     },
     stop: () => {},
-    isPlaying: () => false,
+    isPlaying: () => pdfViewerGroup.visible,
+  });
+
+  state.allFrameTargets.push({
+    mesh: closeBtn,
+    borderMat: null,
+    target: null,
+    contentPos: null,
+    isSubControl: true,
+    play: () => {
+      pdfViewerGroup.visible = false;
+      showPdfVideos(false);
+      state.activeFrame = null;
+    },
+    stop: () => {},
+    isPlaying: () => pdfViewerGroup.visible,
   });
 
   // Dave portrait on east wall (plain photo, no border)
@@ -387,7 +528,7 @@ export function buildDadsHistoryRoom() {
     'These digital scenes were composed in Bryce 3D (ca.\u00A01998), where I arranged imported photos, 3D objects, and landscapes into a virtual set. A camera within the scene was then shifted left and right to capture each eye\u2019s perspective, and the two renders were colorized red and cyan in Photoshop and merged into a single anaglyph image.',
     'The photographs were captured with a digital camera mounted on a sliding dolly. Two shots, inches apart, were combined and colorized in Photoshop using the same technique.',
     'Originally viewed through cardboard 3D glasses, these images are presented here in true stereoscopic 3D through VR.',
-  ], 1.5, new Vector3(15.04, 0.85, 0.20), Math.PI / 2, 'stereo_art', { canvasW: 800, canvasH: 800 });
+  ], 1.5, new Vector3(15.04, 0.80, 0.20), Math.PI / 2, 'stereo_art', { canvasW: 800, canvasH: 800 });
 
   // Dave bust on marble pedestal (near east wall)
   gltfLoader.load('/models/pedestal.glb', (gltf) => {
@@ -462,6 +603,8 @@ export function buildDadsHistoryRoom() {
     '/audio/dad/music/Billy Joel - The Stranger - 09. Everybody Has A Dream - The Stranger (Reprise).mp3',
     "/audio/dad/music/You'll Accomp'ny Me.mp3",
     '/audio/dad/music/11 - Seasons in the Sun.mp3',
+    '/audio/dad/music/03 - Fire and Rain.mp3',
+    '/audio/dad/music/03 - Your Smiling Face - Taylor, James.mp3',
   ];
 
   function shuffleArray(arr) {
@@ -641,6 +784,10 @@ export function buildDadsHistoryRoom() {
   }
 
   stereoAudio.addEventListener('ended', nextTrack);
+  stereoAudio.addEventListener('error', () => {
+    console.warn('Stereo track error, skipping:', shuffled[trackIdx]);
+    nextTrack();
+  });
   drawStopped();
 
   // Now-playing display on east wall above the stereo
@@ -649,9 +796,9 @@ export function buildDadsHistoryRoom() {
     new MeshBasicMaterial({ map: artTex }),
   );
   artMesh.name = 'stereo_display';
-  artMesh.position.set(23.61, 1.60, -2.68);
+  artMesh.position.set(23.67, 1.75, -2.30);
   artMesh.rotation.y = -1.58;
-  artMesh.scale.setScalar(0.386);
+  artMesh.scale.setScalar(0.514);
   state.scene.add(artMesh);
 
   // Skip button below the display
@@ -672,7 +819,7 @@ export function buildDadsHistoryRoom() {
     new MeshBasicMaterial({ map: skipTex }),
   );
   skipBtn.name = 'stereo_skip';
-  skipBtn.position.set(23.58, 1.35, -2.66);
+  skipBtn.position.set(23.58, 1.35, -2.21);
   skipBtn.rotation.y = -1.58;
   skipBtn.scale.setScalar(0.386);
   state.scene.add(skipBtn);
@@ -686,7 +833,7 @@ export function buildDadsHistoryRoom() {
         borderMat: state._stereoRingMat,
         target: null,
         contentPos: null,
-        play: () => { playTrack(); },
+        play: () => { shuffled = shuffleArray(playlist); trackIdx = 0; loadTrack(0); playTrack(); },
         stop: () => {
           stereoAudio.pause();
           stereoAudio.currentTime = 0;
@@ -703,10 +850,11 @@ export function buildDadsHistoryRoom() {
     borderMat: null,
     target: null,
     contentPos: null,
-    play: () => { playTrack(); },
+    play: () => { shuffled = shuffleArray(playlist); trackIdx = 0; loadTrack(0); playTrack(); },
     stop: () => {
       stereoAudio.pause();
       stereoAudio.currentTime = 0;
+      stereoAudio.src = '';
       drawStopped();
     },
     isPlaying: () => !stereoAudio.paused && !stereoAudio.ended,
@@ -719,6 +867,7 @@ export function buildDadsHistoryRoom() {
     borderMat: null,
     target: null,
     contentPos: null,
+    isSubControl: true,
     play: () => {
       nextTrack();
       state.activeFrame = stereoFrame;

@@ -80,16 +80,32 @@ function tryDoorTeleport(isDesktop) {
   return false;
 }
 
+function isWorldVisible(obj) {
+  let o = obj;
+  while (o) {
+    if (!o.visible) return false;
+    o = o.parent;
+  }
+  return true;
+}
+
 function tryFrameTeleport(isDesktop) {
-  const meshes = state.allFrameTargets.map((f) => f.mesh);
+  const meshes = state.allFrameTargets.filter((f) => isWorldVisible(f.mesh)).map((f) => f.mesh);
   const hits = raycaster.intersectObjects(meshes);
   if (hits.length > 0) {
     const frame = state.allFrameTargets.find((f) => f.mesh === hits[0].object);
     if (frame) {
       if (state.activeFrame === frame && frame.isPlaying()) {
         stopActiveFrame();
+      } else if (frame.keepActiveFrame && frame.isPlaying()) {
+        if (frame.stop) frame.stop();
+      } else if (frame.isSubControl && frame.isPlaying()) {
+        if (frame.play) frame.play();
+      } else if (!frame.target && frame.isPlaying()) {
+        if (frame.stop) frame.stop();
+        state.activeFrame = null;
       } else {
-        stopActiveFrame();
+        if (!frame.keepActiveFrame) stopActiveFrame();
         if (frame.target) {
           if (isDesktop) {
             desktopTeleport(frame.target, frame.contentPos);
@@ -99,7 +115,7 @@ function tryFrameTeleport(isDesktop) {
         }
         if (frame.play) {
           frame.play();
-          state.activeFrame = frame;
+          if (!frame.keepActiveFrame) state.activeFrame = frame;
         }
       }
       return true;
@@ -202,6 +218,7 @@ function onMouseMove(event) {
   }
 
   for (const f of state.allFrameTargets) {
+    if (!isWorldVisible(f.mesh)) { if (f.borderMat) f.borderMat.emissiveIntensity = 0; continue; }
     const hit = raycaster.intersectObject(f.mesh).length > 0;
     if (f.borderMat) f.borderMat.emissiveIntensity = hit ? 0.7 : 0;
     if (hit) hovering = true;
@@ -276,6 +293,7 @@ export function updateHoverEffects(now) {
 
   for (const f of state.allFrameTargets) {
     if (!f.borderMat) continue;
+    if (!isWorldVisible(f.mesh)) { f.borderMat.emissiveIntensity = 0; continue; }
     raycastFromController(controller0);
     const fh0 = raycaster.intersectObject(f.mesh).length > 0;
     raycastFromController(controller1);

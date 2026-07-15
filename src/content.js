@@ -122,7 +122,7 @@ export function createBorderFrame(contentW, contentH, borderW) {
   g.userData.frameMat = mat;
   const hw = contentW / 2 + borderW / 2;
   const hh = contentH / 2 + borderW / 2;
-  const depth = 0.12;
+  const depth = 0.02;
 
   const top = new Mesh(new BoxGeometry(contentW + borderW * 2, borderW, depth), mat);
   top.position.set(0, hh, depth / 2);
@@ -151,11 +151,11 @@ export function createMuseumPlaque(paragraphs, displayW, pos, rotY, label, { can
   const ctx = canvas.getContext('2d');
 
   ctx.fillStyle = '#f0e8d8';
-  ctx.font = 'italic 32px Garamond, "Cormorant Garamond", "Palatino Linotype", "Book Antiqua", serif';
+  ctx.font = 'italic 40px Garamond, "Cormorant Garamond", "Palatino Linotype", "Book Antiqua", serif';
   ctx.textBaseline = 'top';
   const margin = 40;
-  const lineH = 44;
-  const paraGap = 34;
+  const lineH = 54;
+  const paraGap = 40;
   const maxW = pw - margin * 2;
 
   function wrapText(text, x, startY) {
@@ -242,14 +242,14 @@ export function createFramedPhoto(src, photoW, photoH, pos, rotY, { audioSrc } =
     new PlaneGeometry(photoW, photoH),
     new MeshBasicMaterial({ map: tex }),
   );
-  photo.position.z = 0.1;
+  photo.position.z = 0.015;
   group.add(photo);
 
   const hitArea = new Mesh(
     new PlaneGeometry(photoW + 0.16, photoH + 0.16),
     new MeshBasicMaterial({ visible: false }),
   );
-  hitArea.position.z = 0.12;
+  hitArea.position.z = 0.02;
   group.add(hitArea);
 
   const nameplate = makeNameplate(filenameToLabel(src), photoW);
@@ -284,7 +284,7 @@ export function createFramedPhoto(src, photoW, photoH, pos, rotY, { audioSrc } =
   return group;
 }
 
-export function createVideoScreen(src, displayWidth, pos, rotY) {
+export function createVideoScreen(src, displayWidth, pos, rotY, { borderWidth } = {}) {
   const vid = document.createElement('video');
   vid.src = src;
   vid.crossOrigin = 'anonymous';
@@ -339,21 +339,22 @@ export function createVideoScreen(src, displayWidth, pos, rotY) {
       entry.canvas = canvas;
       entry.tex = tex;
 
-      const border = createBorderFrame(displayWidth, h, 0.06);
+      const bw = borderWidth || 0.06;
+      const border = createBorderFrame(displayWidth, h, bw);
       group.add(border);
 
       const screen = new Mesh(
         new PlaneGeometry(displayWidth, h),
         new MeshBasicMaterial({ map: tex }),
       );
-      screen.position.z = 0.1;
+      screen.position.z = 0.015;
       group.add(screen);
 
       const hitArea = new Mesh(
         new PlaneGeometry(displayWidth + 0.14, h + 0.14),
         new MeshBasicMaterial({ visible: false }),
       );
-      hitArea.position.z = 0.12;
+      hitArea.position.z = 0.02;
       group.add(hitArea);
 
       const nameplate = makeNameplate(filenameToLabel(src), displayWidth);
@@ -418,7 +419,7 @@ export function createStereoPair(leftSrc, rightSrc, displayWidth, pos, rotY, lab
       new PlaneGeometry(displayWidth + 0.14, h + 0.14),
       new MeshBasicMaterial({ visible: false }),
     );
-    hitArea.position.z = 0.12;
+    hitArea.position.z = 0.02;
 
     const group = new Group();
     group.add(leftEye);
@@ -518,7 +519,7 @@ export function createAnaglyphStereo(src, displayWidth, pos, rotY) {
       new PlaneGeometry(displayWidth + 0.14, h + 0.14),
       new MeshBasicMaterial({ visible: false }),
     );
-    hitArea.position.z = 0.12;
+    hitArea.position.z = 0.02;
 
     const group = new Group();
     group.add(leftEye);
