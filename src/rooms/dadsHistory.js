@@ -528,7 +528,8 @@ export function buildDadsHistoryRoom() {
     'These digital scenes were composed in Bryce 3D (ca.\u00A01998), where I arranged imported photos, 3D objects, and landscapes into a virtual set. A camera within the scene was then shifted left and right to capture each eye\u2019s perspective, and the two renders were colorized red and cyan in Photoshop and merged into a single anaglyph image.',
     'The photographs were captured with a digital camera mounted on a sliding dolly. Two shots, inches apart, were combined and colorized in Photoshop using the same technique.',
     'Originally viewed through cardboard 3D glasses, these images are presented here in true stereoscopic 3D through VR.',
-  ], 1.5, new Vector3(15.04, 0.80, 0.20), Math.PI / 2, 'stereo_art', { canvasW: 800, canvasH: 800 });
+  ], 1.5, new Vector3(15.04, 1.00, 0.20), Math.PI / 2, 'stereo_art', { canvasW: 800, canvasH: 800 });
+  state.scene.getObjectByName('plaque:stereo_art').scale.setScalar(1.21);
 
   // Dave bust on marble pedestal (near east wall)
   gltfLoader.load('/models/pedestal.glb', (gltf) => {
