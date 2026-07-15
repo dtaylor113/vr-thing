@@ -1,4 +1,4 @@
-import { Group, Vector3, TextureLoader, PlaneGeometry, Box3, BoxGeometry, MeshBasicMaterial, MeshStandardMaterial, Mesh, SRGBColorSpace, CanvasTexture } from 'three';
+import { Group, Vector3, TextureLoader, PlaneGeometry, Box3, BoxGeometry, MeshBasicMaterial, MeshStandardMaterial, Mesh, SRGBColorSpace, CanvasTexture, SpotLight } from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import jsmediatags from 'jsmediatags';
 import { createRoom, createDoor, createExitButton, ROOM_W, ROOM_D } from '../room.js';
@@ -24,6 +24,9 @@ const childhoodPhotos = [
   { src: '/images/dad/childhood/DavePre-SchoolPhoto.jpg', w: 905, h: 1332 },
   { src: '/images/dad/childhood/DaveSchoolPhoto.jpg', w: 642, h: 924 },
   { src: '/images/dad/childhood/YoungHT.jpg', w: 860, h: 698, audio: '/audio/dad/Dave-HT.m4a' },
+  { src: '/images/dad/childhood/TheGang.jpg', w: 1839, h: 1839 },
+  { src: '/images/dad/childhood/DaveXMass.jpg', w: 1839, h: 1840 },
+  { src: '/images/dad/childhood/DaveBirthday.jpg', w: 1860, h: 1860 },
 ];
 
 export function buildDadsHistoryRoom() {
@@ -38,15 +41,16 @@ export function buildDadsHistoryRoom() {
 
   // Childhood photo grid (back wall, z = -5)
   const FRAME_MAX = 0.8;
-  const COLS = 4;
-  const colSpacing = 2.2;
-  const rowYs = [3.3, 2.1, 1.0];
-  const startX = HIST_X - ((COLS - 1) / 2) * colSpacing;
+  const COLS = 5;
+  const ROWS = 3;
+  const colSpacing = 2.0;
+  const rowYs = [3.2, 2.1, 1.0];
+  const startX = HIST_X - 4.15;
   const wallZ = -ROOM_D / 2 + 0.04;
 
   childhoodPhotos.forEach((photo, i) => {
-    const col = i % COLS;
-    const row = Math.floor(i / COLS);
+    const col = Math.floor(i / ROWS);
+    const row = i % ROWS;
     const x = startX + col * colSpacing;
     const y = rowYs[row];
 
@@ -527,8 +531,8 @@ export function buildDadsHistoryRoom() {
   createMuseumPlaque([
     'These digital scenes were composed in Bryce 3D (ca.\u00A01998), where I arranged imported photos, 3D objects, and landscapes into a virtual set. A camera within the scene was then shifted left and right to capture each eye\u2019s perspective, and the two renders were colorized red and cyan in Photoshop and merged into a single anaglyph image.',
     'The photographs were captured with a digital camera mounted on a sliding dolly. Two shots, inches apart, were combined and colorized in Photoshop using the same technique.',
-    'Originally viewed through cardboard 3D glasses, these images are presented here in true stereoscopic 3D through VR.',
-  ], 1.5, new Vector3(15.04, 1.00, 0.20), Math.PI / 2, 'stereo_art', { canvasW: 800, canvasH: 800 });
+    'Originally viewed through cardboard 3D glasses, these images are presented here in true stereoscopic 3D through VR mode.',
+  ], 1.5, new Vector3(15.04, 0.75, 0.20), Math.PI / 2, 'stereo_art', { canvasW: 800, canvasH: 1100 });
   state.scene.getObjectByName('plaque:stereo_art').scale.setScalar(1.21);
 
   // Dave bust on marble pedestal (near east wall)
@@ -558,33 +562,29 @@ export function buildDadsHistoryRoom() {
     stereo.rotation.y = -1.58;
     state.scene.add(stereo);
 
-    // Invisible hit box over the stereo for click detection
+    // Invisible hit box over the entire stereo (body + speakers)
     const stereoHit = new Mesh(
-      new BoxGeometry(0.6, 0.5, 0.5),
+      new BoxGeometry(1.6, 0.6, 1.6),
       new MeshBasicMaterial({ visible: false }),
     );
     stereoHit.position.copy(stereo.position);
-    stereoHit.position.y += 0.25;
+    stereoHit.position.y += 0.2;
     stereoHit.rotation.y = stereo.rotation.y;
     state.scene.add(stereoHit);
 
-    // Hover glow - applied to stereo meshes directly
+    // Hover highlight — spotlight from above
+    const hoverSpot = new SpotLight(0xeeeeff, 0, 0, Math.PI / 12, 0.7, 0);
+    hoverSpot.position.set(stereo.position.x, stereo.position.y + 2.5, stereo.position.z);
+    hoverSpot.target = stereo;
+    state.scene.add(hoverSpot);
+    state.scene.add(hoverSpot.target);
+
     const glowProxy = { _ei: 0 };
     Object.defineProperty(glowProxy, 'emissiveIntensity', {
       get() { return this._ei; },
       set(v) {
         this._ei = v;
-        stereo.traverse((child) => {
-          if (child.isMesh && child.material) {
-            if (!child.material._cloned) {
-              child.material = child.material.clone();
-              child.material.emissive = child.material.emissive || new (child.material.color.constructor)(0x446688);
-              child.material.emissive.set(0x446688);
-              child.material._cloned = true;
-            }
-            child.material.emissiveIntensity = v;
-          }
-        });
+        hoverSpot.intensity = v * 30;
       },
     });
 
@@ -834,6 +834,7 @@ export function buildDadsHistoryRoom() {
         borderMat: state._stereoRingMat,
         target: null,
         contentPos: null,
+        keepActiveFrame: true,
         play: () => { shuffled = shuffleArray(playlist); trackIdx = 0; loadTrack(0); playTrack(); },
         stop: () => {
           stereoAudio.pause();
@@ -851,6 +852,7 @@ export function buildDadsHistoryRoom() {
     borderMat: null,
     target: null,
     contentPos: null,
+    keepActiveFrame: true,
     play: () => { shuffled = shuffleArray(playlist); trackIdx = 0; loadTrack(0); playTrack(); },
     stop: () => {
       stereoAudio.pause();

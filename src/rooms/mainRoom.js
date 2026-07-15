@@ -25,24 +25,24 @@ export function buildMainRoom() {
   createVideoScreen('/video/ReeseDoraBoots.mp4', 1.2,
     new Vector3(-1.5, 3.0, kz), 0);
 
-  createVideoScreen('/video/ReeseSledingSloMo.mp4', 1.2,
-    new Vector3(0.5, 3.0, kz), 0);
+  createVideoScreen('/video/ReeseSledingSloMo.mp4', 1.45,
+    new Vector3(0.50, 3.00, kz), 0);
 
-  createVideoScreen('/video/ReeseSellingCookies.mp4', 0.8,
-    new Vector3(3.5, 2.8, kz), 0);
+  createVideoScreen('/video/ReeseSellingCookies.mp4', 0.88,
+    new Vector3(3.50, 2.80, kz), 0);
 
   // Bottom row
   createVideoScreen('/video/SpencerAngel.mp4', 1.2,
     new Vector3(-3.5, 1.2, kz), 0);
 
   createVideoScreen('/video/Mason_Spencer_In_A_Tree.mp4', 0.8,
-    new Vector3(-1.2, 1.5, kz), 0);
+    new Vector3(-1.20, 1.30, kz), 0);
 
-  createVideoScreen('/video/Spencer_Mason_Wrestling.mp4', 1.2,
-    new Vector3(1.2, 1.2, kz), 0);
+  createVideoScreen('/video/Spencer_Mason_Wrestling.mp4', 1.32,
+    new Vector3(0.60, 1.30, kz), 0);
 
-  createVideoScreen('/video/Reese_Flying_A_Kite.MP4', 1.2,
-    new Vector3(3.2, 1.2, kz), 0);
+  createVideoScreen('/video/Reese_Flying_A_Kite.MP4', 1.45,
+    new Vector3(3.20, 1.20, kz), 0);
 
   // Left wall "Kids" (x = -5, rotY = PI/2)
   const lx = -ROOM_W / 2 + 0.04;
@@ -54,15 +54,25 @@ export function buildMainRoom() {
   createVideoScreen('/video/ReeseSinging.mp4', 0.8,
     new Vector3(-4.96, 2.70, 1.05), Math.PI / 2);
 
-  createVideoScreen('/video/ReeseYoutubeVideo.MP4', 1.2,
-    new Vector3(lx, 3.0, 3), Math.PI / 2);
+  createVideoScreen('/video/ReeseYoutubeVideo.MP4', 1.45,
+    new Vector3(-4.96, 2.75, 2.90), Math.PI / 2);
 
   // Bottom row
   createVideoScreen('/video/MasonCrash.MP4', 1.2,
-    new Vector3(-4.96, 1.45, -1.00), Math.PI / 2);
+    new Vector3(-4.96, 1.00, -1.00), Math.PI / 2);
+
+  createVideoScreen('/video/2010SpencerFootball.mp4', 1.17,
+    new Vector3(-4.96, 1.00, 1.00), Math.PI / 2);
 
   createVideoScreen('/video/MasonCrazyNarration.MP4', 1.2,
     new Vector3(lx, 1.0, 3), Math.PI / 2);
+
+  // Additional left wall
+  createVideoScreen('/video/2010MasonFlagFootball.mp4', 1.29,
+    new Vector3(-4.96, 2.75, -1.00), Math.PI / 2);
+
+  createVideoScreen('/video/2010MasonSoccer.mp4', 1.29,
+    new Vector3(-4.96, 1.05, -3.00), Math.PI / 2);
 
   // 3D Picture frame + pedestal (Mom/Dad wall)
   const gltfLoader = new GLTFLoader();

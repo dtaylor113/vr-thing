@@ -291,8 +291,6 @@ export function createVideoScreen(src, displayWidth, pos, rotY, { borderWidth } 
   vid.loop = true;
   vid.playsInline = true;
   vid.preload = 'metadata';
-  vid.addEventListener('error', () => console.warn('Video error:', src, vid.error?.message));
-
   const group = new Group();
   group.name = 'video:' + src.split('/').pop();
   group.position.copy(pos);
@@ -315,9 +313,41 @@ export function createVideoScreen(src, displayWidth, pos, rotY, { borderWidth } 
   };
   const isPlaying = () => !vid.paused && !vid.ended;
 
+  let metadataLoaded = false;
+  function showErrorPlaceholder() {
+    if (metadataLoaded) return;
+    const h = displayWidth * 0.75;
+    const bw = borderWidth || 0.06;
+    const border = createBorderFrame(displayWidth, h, bw);
+    group.add(border);
+
+    const errCanvas = document.createElement('canvas');
+    errCanvas.width = 512; errCanvas.height = 384;
+    const ctx = errCanvas.getContext('2d');
+    ctx.fillStyle = '#1a1a1a'; ctx.fillRect(0, 0, 512, 384);
+    ctx.fillStyle = '#cc4444'; ctx.font = 'bold 28px sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('Video format not supported', 256, 170);
+    ctx.fillStyle = '#888'; ctx.font = '20px sans-serif';
+    ctx.fillText(src.split('/').pop(), 256, 210);
+    const errTex = new CanvasTexture(errCanvas);
+    const screen = new Mesh(new PlaneGeometry(displayWidth, h), new MeshBasicMaterial({ map: errTex }));
+    screen.position.z = 0.015;
+    group.add(screen);
+
+    const nameplate = makeNameplate(filenameToLabel(src), displayWidth);
+    nameplate.position.set(0, -(h / 2) - 0.2, 0.05);
+    group.add(nameplate);
+
+    console.warn('Video load failed:', src, vid.error?.message || 'unknown error');
+  }
+
+  vid.addEventListener('error', () => showErrorPlaceholder());
+
   let thumbnailDone = false;
   const ready = new Promise((resolve) => {
     vid.addEventListener('loadedmetadata', () => {
+      metadataLoaded = true;
       const vw = vid.videoWidth || 640;
       const vh = vid.videoHeight || 480;
       const aspect = vh / vw;
