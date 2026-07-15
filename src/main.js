@@ -86,9 +86,15 @@ onVideoLoadProgress(() => {
 
 allVideosReady().then(() => {
   renderer.xr.enabled = true;
-  document.body.appendChild(
-    VRButton.createButton(renderer, { optionalFeatures: ['hand-tracking'] }),
-  );
+  const vrBtn = VRButton.createButton(renderer, { optionalFeatures: ['hand-tracking'] });
+  document.body.appendChild(vrBtn);
+  function checkVrSupport() {
+    if (vrBtn.textContent.includes('NOT SUPPORTED')) {
+      vrBtn.classList.add('vr-not-supported');
+    }
+  }
+  checkVrSupport();
+  new MutationObserver(checkVrSupport).observe(vrBtn, { childList: true, characterData: true, subtree: true });
   overlay.classList.add('fade-out');
   setTimeout(() => overlay.remove(), 700);
   info.textContent = 'Ready \u2013 click "Enter VR" on your headset!';

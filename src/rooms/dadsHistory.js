@@ -35,7 +35,7 @@ export function buildDadsHistoryRoom() {
   createRoom(origin, [
     { label: 'Childhood',     x: HIST_X,              z: -ROOM_D / 2, w: ROOM_W, ry: 0 },
     { label: '',               x: HIST_X + ROOM_W / 2, z: 0,           w: ROOM_D, ry: -Math.PI / 2 },
-    { label: '',               x: HIST_X,              z: ROOM_D / 2,  w: ROOM_W, ry: Math.PI },
+    { label: 'Digital Art',    x: HIST_X,              z: ROOM_D / 2,  w: ROOM_W, ry: Math.PI },
     { label: '3D Stereo Art', x: HIST_X - ROOM_W / 2, z: 0,           w: ROOM_D, ry: Math.PI / 2 },
   ], { floor: 0x2a3a2a, wall: 0x3a4e3a, ceiling: 0x223322 });
 
@@ -43,9 +43,9 @@ export function buildDadsHistoryRoom() {
   const FRAME_MAX = 0.8;
   const COLS = 5;
   const ROWS = 3;
-  const colSpacing = 2.0;
-  const rowYs = [3.2, 2.1, 1.0];
-  const startX = HIST_X - 4.15;
+  const colSpacing = 1.7;
+  const rowYs = [3.1, 1.9, 0.75];
+  const startX = HIST_X - 3.05;
   const wallZ = -ROOM_D / 2 + 0.04;
 
   childhoodPhotos.forEach((photo, i) => {
@@ -292,8 +292,12 @@ export function buildDadsHistoryRoom() {
     play: async () => {
       pdfViewerGroup.visible = true;
       showPdfVideos(true);
-      await loadPdf();
-      renderPdfPage(currentPage);
+      try {
+        await loadPdf();
+        await renderPdfPage(currentPage);
+      } catch (e) {
+        console.error('PDF load/render failed:', e);
+      }
     },
     stop: () => {
       pdfViewerGroup.visible = false;
@@ -339,6 +343,12 @@ export function buildDadsHistoryRoom() {
         if (obj.getObjectByProperty('uuid', f.mesh.uuid)) {
           f.keepActiveFrame = true;
           f.target = null;
+          const originalStop = f.stop;
+          f.stop = () => {
+            if (originalStop) originalStop();
+            if (vidEntry) { vidEntry.vid.pause(); vidEntry.playing = false; }
+            obj.visible = false;
+          };
         }
       }
 

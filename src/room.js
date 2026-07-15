@@ -9,6 +9,7 @@ import {
   PointLight,
   PlaneGeometry,
   DoubleSide,
+  SpotLight,
 } from 'three';
 import { state } from './state.js';
 import { makeTextTexture } from './content.js';
@@ -145,7 +146,13 @@ export function createDoor(label, pos, rotY, teleportTarget) {
   group.rotation.y = rotY;
   scene.add(group);
 
-  state.doorTargets.push({ panel, group, target: teleportTarget, panelMat });
+  const hoverSpot = new SpotLight(0xeeeeff, 0, 0, Math.PI / 10, 0.7, 0);
+  hoverSpot.position.set(pos.x, pos.y + 2.5, pos.z);
+  hoverSpot.target = group;
+  scene.add(hoverSpot);
+  scene.add(hoverSpot.target);
+
+  state.doorTargets.push({ panel, group, target: teleportTarget, panelMat, hoverSpot });
   return { group, panel };
 }
 

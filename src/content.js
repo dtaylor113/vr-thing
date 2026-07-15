@@ -11,6 +11,7 @@ import {
   SRGBColorSpace,
   CircleGeometry,
   ShaderMaterial,
+  SpotLight,
 } from 'three';
 import { state } from './state.js';
 
@@ -193,6 +194,21 @@ export function createMuseumPlaque(paragraphs, displayW, pos, rotY, label, { can
   mesh.rotation.y = rotY;
   state.scene.add(mesh);
 
+  const hoverSpot = new SpotLight(0xeeeeff, 0, 0, Math.PI / 12, 0.7, 0);
+  hoverSpot.position.set(pos.x, pos.y + 2.5, pos.z);
+  hoverSpot.target = mesh;
+  state.scene.add(hoverSpot);
+  state.scene.add(hoverSpot.target);
+
+  const glowProxy = { _ei: 0 };
+  Object.defineProperty(glowProxy, 'emissiveIntensity', {
+    get() { return this._ei; },
+    set(v) {
+      this._ei = v;
+      hoverSpot.intensity = v * 30;
+    },
+  });
+
   const standoff = 1.5;
   const target = new Vector3(
     pos.x + Math.sin(rotY) * standoff,
@@ -201,7 +217,7 @@ export function createMuseumPlaque(paragraphs, displayW, pos, rotY, label, { can
   );
   state.allFrameTargets.push({
     mesh,
-    borderMat: null,
+    borderMat: glowProxy,
     target,
     contentPos: pos.clone(),
     play: null,

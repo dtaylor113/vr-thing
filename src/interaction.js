@@ -71,7 +71,7 @@ function tryDoorTeleport(isDesktop) {
       if (isDesktop) {
         desktopTeleport(door.target, new Vector3(door.target.x, 1.5, door.target.z - 2));
       } else {
-        state.dolly.position.copy(door.target);
+        state.dolly.position.set(door.target.x, 0, door.target.z);
       }
       detectRoom(door.target);
       return true;
@@ -93,7 +93,8 @@ function tryFrameTeleport(isDesktop) {
   const meshes = state.allFrameTargets.filter((f) => isWorldVisible(f.mesh)).map((f) => f.mesh);
   const hits = raycaster.intersectObjects(meshes);
   if (hits.length > 0) {
-    const frame = state.allFrameTargets.find((f) => f.mesh === hits[0].object);
+    const hitFrames = hits.map((h) => state.allFrameTargets.find((f) => f.mesh === h.object)).filter(Boolean);
+    const frame = hitFrames.find((f) => f.isSubControl) || hitFrames[0];
     if (frame) {
       if (state.activeFrame === frame && frame.isPlaying()) {
         stopActiveFrame();
@@ -213,7 +214,7 @@ function onMouseMove(event) {
 
   for (const d of state.doorTargets) {
     const hit = raycaster.intersectObject(d.panel).length > 0;
-    d.panelMat.emissiveIntensity = hit ? 0.6 : 0.15;
+    d.hoverSpot.intensity = hit ? 21 : 0;
     if (hit) hovering = true;
   }
 
@@ -288,7 +289,7 @@ export function updateHoverEffects(now) {
     const dh0 = raycaster.intersectObject(d.panel).length > 0;
     raycastFromController(controller1);
     const dh1 = raycaster.intersectObject(d.panel).length > 0;
-    d.panelMat.emissiveIntensity = (dh0 || dh1) ? 0.6 : 0.1 + 0.05 * pulse;
+    d.hoverSpot.intensity = (dh0 || dh1) ? 21 : 0;
   }
 
   for (const f of state.allFrameTargets) {
