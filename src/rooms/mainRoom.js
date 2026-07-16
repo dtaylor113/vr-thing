@@ -10,7 +10,7 @@ export function buildMainRoom() {
 
   createRoom(origin, [
     { label: '',                  x: 0,          z: -ROOM_D / 2, w: ROOM_W, ry: 0 },
-    { label: 'Mom / Dad',         x: ROOM_W / 2, z: 0,           w: ROOM_D, ry: -Math.PI / 2 },
+    { label: 'Our Family',         x: ROOM_W / 2, z: 0,           w: ROOM_D, ry: -Math.PI / 2 },
     { label: '',                  x: 0,          z: ROOM_D / 2,  w: ROOM_W, ry: Math.PI },
     { label: '',                  x: -ROOM_W / 2, z: 0,          w: ROOM_D, ry: Math.PI / 2 },
   ], { floor: 0xffffff, wall: 0xffffff, ceiling: 0x222233 }, {

@@ -108,6 +108,84 @@ export function buildDadsHistoryRoom() {
     new Vector3(0, 1.6, 0),
   );
 
+  // Titans of Tennis cartoon on east wall, above desk
+  const ewx = HIST_X + ROOM_W / 2 - 0.04;
+  const titansPhotoPos = new Vector3(24.96, 2.70, -1.80);
+  createFramedPhoto("/images/dad/TitansOfTennisWhat'sTheScore.JPEG", 1.5, 0.72,
+    titansPhotoPos, -Math.PI / 2, { hideNameplate: true, standoff: 2.2 });
+
+  // Popup video viewer for Titans of Tennis (positioned on wall below the cartoon)
+  const titansVid = document.createElement('video');
+  titansVid.src = '/video/TitansOfTennis.mp4';
+  titansVid.crossOrigin = 'anonymous';
+  titansVid.preload = 'auto';
+  titansVid.playsInline = true;
+
+  const titansCanvas = document.createElement('canvas');
+  titansCanvas.width = 1280;
+  titansCanvas.height = 720;
+  const titansCtx = titansCanvas.getContext('2d');
+  titansCtx.fillStyle = '#000';
+  titansCtx.fillRect(0, 0, 1280, 720);
+  const titansTex = new CanvasTexture(titansCanvas);
+
+  const titansGroup = new Group();
+  titansGroup.name = 'titans_viewer';
+  titansGroup.visible = false;
+  titansGroup.position.set(24.61, 3.05, -3.75);
+  titansGroup.rotation.y = -1.2707963267948963;
+  titansGroup.scale.setScalar(1.1);
+  state.scene.add(titansGroup);
+
+  const tvW = 2.0, tvH = tvW * (9 / 16);
+  const tvBg = new Mesh(
+    new PlaneGeometry(tvW + 0.08, tvH + 0.08),
+    new MeshStandardMaterial({ color: 0x111111, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 }),
+  );
+  tvBg.position.z = -0.005;
+  titansGroup.add(tvBg);
+
+  const tvScreen = new Mesh(
+    new PlaneGeometry(tvW, tvH),
+    new MeshBasicMaterial({ map: titansTex }),
+  );
+  titansGroup.add(tvScreen);
+
+  let titansPlaying = false;
+
+  function startTitansVideo() {
+    titansGroup.visible = true;
+    titansVid.currentTime = 0;
+    titansVid.play().catch((e) => {
+      console.warn('Titans video play failed, retrying:', e);
+      titansVid.addEventListener('canplay', () => titansVid.play().catch(() => {}), { once: true });
+    });
+    titansPlaying = true;
+    if (!state._titansAnimating) {
+      state._titansAnimating = true;
+      (function drawFrame() {
+        if (!titansPlaying) { state._titansAnimating = false; return; }
+        if (titansVid.readyState >= titansVid.HAVE_CURRENT_DATA) {
+          titansCtx.drawImage(titansVid, 0, 0, 1280, 720);
+          titansTex.needsUpdate = true;
+        }
+        requestAnimationFrame(drawFrame);
+      })();
+    }
+  }
+
+  function stopTitansVideo() {
+    titansVid.pause();
+    titansVid.currentTime = 0;
+    titansPlaying = false;
+    titansGroup.visible = false;
+  }
+
+  const titansFrame = state.allFrameTargets[state.allFrameTargets.length - 1];
+  titansFrame.play = startTitansVideo;
+  titansFrame.stop = stopTitansVideo;
+  titansFrame.isPlaying = () => titansPlaying;
+
   // GLB models — table and action figure on "Before Laura" side
   const gltfLoader = new GLTFLoader();
 

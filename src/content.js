@@ -228,8 +228,8 @@ export function createMuseumPlaque(paragraphs, displayW, pos, rotY, label, { can
   return mesh;
 }
 
-function registerFrame(mesh, border, contentH, contentW, pos, rotY, play, stop, isPlaying) {
-  const standoff = 1.5;
+function registerFrame(mesh, border, contentH, contentW, pos, rotY, play, stop, isPlaying, customStandoff) {
+  const standoff = customStandoff || 1.5;
   const target = new Vector3(
     pos.x + Math.sin(rotY) * standoff,
     Math.max(0, pos.y - 1.6),
@@ -246,7 +246,7 @@ function registerFrame(mesh, border, contentH, contentW, pos, rotY, play, stop, 
   });
 }
 
-export function createFramedPhoto(src, photoW, photoH, pos, rotY, { audioSrc } = {}) {
+export function createFramedPhoto(src, photoW, photoH, pos, rotY, { audioSrc, hideNameplate, standoff } = {}) {
   const group = new Group();
   group.name = 'photo:' + src.split('/').pop();
 
@@ -268,9 +268,11 @@ export function createFramedPhoto(src, photoW, photoH, pos, rotY, { audioSrc } =
   hitArea.position.z = 0.02;
   group.add(hitArea);
 
-  const nameplate = makeNameplate(filenameToLabel(src), photoW);
-  nameplate.position.set(0, -(photoH / 2) - 0.2, 0.05);
-  group.add(nameplate);
+  if (!hideNameplate) {
+    const nameplate = makeNameplate(filenameToLabel(src), photoW);
+    nameplate.position.set(0, -(photoH / 2) - 0.2, 0.05);
+    group.add(nameplate);
+  }
 
   group.position.copy(pos);
   group.rotation.y = rotY;
@@ -295,7 +297,7 @@ export function createFramedPhoto(src, photoW, photoH, pos, rotY, { audioSrc } =
     group.add(speaker);
   }
 
-  registerFrame(hitArea, border, photoH, photoW, pos, rotY, play, stop, isPlaying);
+  registerFrame(hitArea, border, photoH, photoW, pos, rotY, play, stop, isPlaying, standoff);
 
   return group;
 }
