@@ -57,11 +57,11 @@ const vrLegend = createVRLegend();
 
 // ── Desktop controls ──
 const controls = new OrbitControls(camera, renderer.domElement);
-controls.target.set(0, 1.5, -2);
+controls.target.set(0, 2.0, -2);
 controls.enableDamping = true;
 controls.maxDistance = 6;
 controls.maxPolarAngle = Math.PI * 0.85;
-camera.position.set(0, 1.6, 3);
+camera.position.set(0, 2.2, 3);
 controls.update();
 state.controls = controls;
 

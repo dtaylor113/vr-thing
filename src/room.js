@@ -55,7 +55,6 @@ export function createRoom(origin, wallDefs, colors = defaultColors, textures = 
   const floor = new Mesh(new PlaneGeometry(ROOM_W, ROOM_D), floorMat);
   floor.rotation.x = -Math.PI / 2;
   floor.position.set(origin.x, origin.y, origin.z);
-  floor.receiveShadow = true;
   floor.name = 'floor';
   scene.add(floor);
   state.allFloors.push(floor);
@@ -95,19 +94,13 @@ export function createRoom(origin, wallDefs, colors = defaultColors, textures = 
     }
   });
 
-  // Lighting
-  const centerLight = new PointLight(0xffeedd, 100, 25);
+  // Lighting (2 lights: bright center + soft ambient)
+  const centerLight = new PointLight(0xffeedd, 120, 25);
   centerLight.position.set(origin.x, 3.8 + origin.y, origin.z);
-  centerLight.castShadow = true;
   scene.add(centerLight);
 
-  [-3, 3].forEach((dx) => {
-    [-3, 3].forEach((dz) => {
-      const l = new PointLight(0xddeeff, 20, 10);
-      l.position.set(origin.x + dx, 3.5 + origin.y, origin.z + dz);
-      scene.add(l);
-    });
-  });
+  const ambLight = new AmbientLight(0xddeeff, 0.4);
+  scene.add(ambLight);
 
   const margin = 0.3;
   state.roomBounds.push({

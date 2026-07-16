@@ -40,13 +40,10 @@ export function buildDadsHistoryRoom() {
   ], { floor: 0xffffff, wall: 0xffffff, ceiling: 0x223322 }, {
     floor: {
       color: '/textures/wood-flooring/WoodFloor064_1K-PNG_Color.png',
-      normal: '/textures/wood-flooring/WoodFloor064_1K-PNG_NormalGL.png',
-      roughness: '/textures/wood-flooring/WoodFloor064_1K-PNG_Roughness.png',
       repeatX: 4, repeatY: 4,
     },
     wall: {
       color: '/textures/book-pattern-fabric/book_pattern_col1_1k.png',
-      roughness: '/textures/book-pattern-fabric/book_pattern_rough_1k.jpg',
       repeatX: 6, repeatY: 3,
     },
   });
@@ -105,7 +102,7 @@ export function buildDadsHistoryRoom() {
     'Main Room',
     new Vector3(HIST_X + 3.5, 1.0, ROOM_D / 2 - 0.05),
     Math.PI,
-    new Vector3(0, 1.6, 0),
+    new Vector3(0, 2.2, 0),
   );
 
   // Titans of Tennis cartoon on east wall, above desk
@@ -118,7 +115,7 @@ export function buildDadsHistoryRoom() {
   const titansVid = document.createElement('video');
   titansVid.src = '/video/TitansOfTennis.mp4';
   titansVid.crossOrigin = 'anonymous';
-  titansVid.preload = 'auto';
+  titansVid.preload = 'metadata';
   titansVid.playsInline = true;
 
   const titansCanvas = document.createElement('canvas');
@@ -347,7 +344,7 @@ export function buildDadsHistoryRoom() {
 
   async function loadPdf() {
     if (pdfDoc) return;
-    const task = pdfjsLib.getDocument({ url: "/images/dad/Dave Taylor\u2019s GUI Portfolio.pdf" });
+    const task = pdfjsLib.getDocument({ url: "/images/dad/Dave Taylor's GUI Portfolio.pdf" });
     pdfDoc = await task.promise;
     totalPages = pdfDoc.numPages;
   }
@@ -433,10 +430,15 @@ export function buildDadsHistoryRoom() {
         if (obj.getObjectByProperty('uuid', f.mesh.uuid)) {
           f.keepActiveFrame = true;
           f.target = null;
+          const originalPlay = f.play;
+          f.play = () => {
+            obj.visible = true;
+            if (originalPlay) originalPlay();
+          };
           const originalStop = f.stop;
           f.stop = () => {
-            if (originalStop) originalStop();
             if (vidEntry) { vidEntry.vid.pause(); vidEntry.playing = false; }
+            if (originalStop) originalStop();
             obj.visible = false;
           };
         }

@@ -19,8 +19,6 @@ export function buildLaurasRoom() {
     },
     wall: {
       color: '/textures/redish-fabric/Fabric002_1K-JPG_Color.jpg',
-      normal: '/textures/redish-fabric/Fabric002_1K-JPG_NormalGL.jpg',
-      roughness: '/textures/redish-fabric/Fabric002_1K-JPG_Roughness.jpg',
       repeatX: 6, repeatY: 3,
     },
   });
@@ -39,6 +37,6 @@ export function buildLaurasRoom() {
     'Main Room',
     new Vector3(LAURA_X + 3.5, 1.0, ROOM_D / 2 - 0.05),
     Math.PI,
-    new Vector3(0, 1.6, 0),
+    new Vector3(0, 2.2, 0),
   );
 }

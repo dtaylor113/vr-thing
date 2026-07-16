@@ -21,8 +21,6 @@ export function buildMainRoom() {
     },
     wall: {
       color: '/textures/redish-fabric/Fabric002_1K-JPG_Color.jpg',
-      normal: '/textures/redish-fabric/Fabric002_1K-JPG_NormalGL.jpg',
-      roughness: '/textures/redish-fabric/Fabric002_1K-JPG_Roughness.jpg',
       repeatX: 6, repeatY: 3,
     },
   });
@@ -144,7 +142,7 @@ export function buildMainRoom() {
     "Dave's Room",
     new Vector3(ROOM_W / 2 - 0.05, 1.0, -3),
     -Math.PI / 2,
-    new Vector3(HIST_X, 1.6, 0),
+    new Vector3(HIST_X, 2.2, 0),
   );
 
   // Door to Laura's Room (Our Family wall, right side)
@@ -152,6 +150,6 @@ export function buildMainRoom() {
     "Laura's Room",
     new Vector3(ROOM_W / 2 - 0.05, 1.0, 3),
     -Math.PI / 2,
-    new Vector3(LAURA_X, 1.6, 0),
+    new Vector3(LAURA_X, 2.2, 0),
   );
 }

@@ -69,7 +69,7 @@ function tryDoorTeleport(isDesktop) {
     if (door) {
       stopActiveFrame();
       if (isDesktop) {
-        desktopTeleport(door.target, new Vector3(door.target.x, 1.5, door.target.z - 2));
+        desktopTeleport(door.target, new Vector3(door.target.x, door.target.y, door.target.z - 2));
       } else {
         state.dolly.position.set(door.target.x, 0, door.target.z);
       }
@@ -111,7 +111,7 @@ function tryFrameTeleport(isDesktop) {
           if (isDesktop) {
             desktopTeleport(frame.target, frame.contentPos);
           } else {
-            state.dolly.position.copy(frame.target);
+            state.dolly.position.set(frame.target.x, 0, frame.target.z);
           }
         }
         if (frame.play) {
@@ -125,7 +125,7 @@ function tryFrameTeleport(isDesktop) {
   return false;
 }
 
-const EYE_HEIGHT = 1.6;
+const EYE_HEIGHT = 2.2;
 
 function tryTeleport() {
   const hits = raycaster.intersectObjects(state.allFloors);
