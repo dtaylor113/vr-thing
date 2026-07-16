@@ -14,6 +14,7 @@ import { setupInteraction, updateHoverEffects, shortenRays } from './interaction
 import { allVideosReady, onVideoLoadProgress } from './content.js';
 import { buildMainRoom } from './rooms/mainRoom.js';
 import { buildDadsHistoryRoom } from './rooms/dadsHistory.js';
+import { buildLaurasRoom } from './rooms/laurasRoom.js';
 import { setupEditMode } from './editMode.js';
 
 // ── Renderer ──
@@ -42,6 +43,7 @@ state.renderer = renderer;
 // ── Build rooms ──
 buildMainRoom();
 buildDadsHistoryRoom();
+buildLaurasRoom();
 
 // ── Input ──
 const { controller0, controller1, ray0, ray1 } = setupLocomotion();

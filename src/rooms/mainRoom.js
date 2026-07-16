@@ -4,6 +4,7 @@ import { state } from '../state.js';
 import { createRoom, createDoor, createExitButton, ROOM_W, ROOM_D, ROOM_H } from '../room.js';
 import { createVideoScreen } from '../content.js';
 import { HIST_X } from './dadsHistory.js';
+import { LAURA_X } from './laurasRoom.js';
 
 export function buildMainRoom() {
   const origin = new Vector3(0, 0, 0);
@@ -13,7 +14,7 @@ export function buildMainRoom() {
     { label: 'Our Family',         x: ROOM_W / 2, z: 0,           w: ROOM_D, ry: -Math.PI / 2 },
     { label: '',                  x: 0,          z: ROOM_D / 2,  w: ROOM_W, ry: Math.PI },
     { label: '',                  x: -ROOM_W / 2, z: 0,          w: ROOM_D, ry: Math.PI / 2 },
-  ], { floor: 0xffffff, wall: 0xffffff, ceiling: 0x222233 }, {
+  ], { floor: 0xffffff, wall: 0xffffff, ceiling: 0x6b5a4a }, {
     floor: {
       color: '/textures/plank_flooring/plank_flooring_04_diff_1k.jpg',
       repeatX: 4, repeatY: 4,
@@ -90,17 +91,19 @@ export function buildMainRoom() {
 
   gltfLoader.load('/models/pedestal.glb', (gltf) => {
     const pedestal = gltf.scene;
-    pedestal.scale.setScalar(2.0);
-    pedestal.position.set(3.55, 0.87, 2.95);
+    pedestal.name = 'pedestal';
+    pedestal.scale.setScalar(1.24);
+    pedestal.position.set(3.95, 0.57, 0.65);
     pedestal.rotation.y = -2.35;
     state.scene.add(pedestal);
   });
 
   gltfLoader.load('/models/frame.glb', (gltf) => {
     const frame = gltf.scene;
+    frame.name = 'picture_frame';
     frame.scale.setScalar(0.8);
-    frame.position.set(4.05, 1.84, 2.45);
-    frame.rotation.y = 1.5207963;
+    frame.position.set(4.22, 1.19, 0.36);
+    frame.rotation.y = 1.451;
     state.scene.add(frame);
   });
 
@@ -136,11 +139,19 @@ export function buildMainRoom() {
   // EXIT VR button (South wall, center)
   createExitButton(new Vector3(0, 1.2, ROOM_D / 2 - 0.15), Math.PI);
 
-  // Door to Dave's Room (Mom/Dad wall, left side when facing Kids)
+  // Door to Dave's Room (Our Family wall, left side)
   createDoor(
     "Dave's Room",
     new Vector3(ROOM_W / 2 - 0.05, 1.0, -3),
     -Math.PI / 2,
     new Vector3(HIST_X, 1.6, 0),
+  );
+
+  // Door to Laura's Room (Our Family wall, right side)
+  createDoor(
+    "Laura's Room",
+    new Vector3(ROOM_W / 2 - 0.05, 1.0, 3),
+    -Math.PI / 2,
+    new Vector3(LAURA_X, 1.6, 0),
   );
 }
