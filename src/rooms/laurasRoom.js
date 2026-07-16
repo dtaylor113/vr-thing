@@ -1,5 +1,6 @@
 import { Vector3 } from 'three';
 import { createRoom, createDoor, createExitButton, ROOM_W, ROOM_D } from '../room.js';
+import { createVideoScreen } from '../content.js';
 
 export const LAURA_X = -20;
 
@@ -23,6 +24,14 @@ export function buildLaurasRoom() {
       repeatX: 6, repeatY: 3,
     },
   });
+
+  // Back wall (z = -5) — the wall you face when entering
+  const bz = -ROOM_D / 2 + 0.04;
+  createVideoScreen('/video/FlashMob.mp4', 2.66,
+    new Vector3(LAURA_X - 2, 2.0, bz), 0);
+
+  createVideoScreen('/video/Laura/LauraTributeAward.mp4', 1.5,
+    new Vector3(LAURA_X + 2, 2.0, bz), 0);
 
   createExitButton(new Vector3(LAURA_X + 3.5, 2.8, ROOM_D / 2 - 0.15), Math.PI);
 
