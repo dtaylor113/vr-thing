@@ -411,10 +411,10 @@ export function createVideoScreen(src, displayWidth, pos, rotY, { borderWidth } 
 
       registerFrame(hitArea, border, h, displayWidth, pos, rotY, play, stop, isPlaying);
 
-      vid.currentTime = Math.min(2.0, vid.duration * 0.05);
+      vid.currentTime = Math.min(5.0, vid.duration * 0.05);
     });
 
-    vid.addEventListener('seeked', function grabThumbnail() {
+    function tryGrab() {
       if (thumbnailDone || !entry.ctx) return;
       if (vid.readyState >= vid.HAVE_CURRENT_DATA) {
         entry.ctx.drawImage(vid, 0, 0, entry.canvas.width, entry.canvas.height);
@@ -423,9 +423,17 @@ export function createVideoScreen(src, displayWidth, pos, rotY, { borderWidth } 
         resolve();
         if (onProgressCallback) onProgressCallback();
       }
+    }
+
+    vid.addEventListener('seeked', () => {
+      tryGrab();
+      if (!thumbnailDone) setTimeout(tryGrab, 200);
+      if (!thumbnailDone) setTimeout(tryGrab, 500);
     });
+    vid.addEventListener('canplay', tryGrab);
 
     setTimeout(() => {
+      tryGrab();
       if (!thumbnailDone) { resolve(); if (onProgressCallback) onProgressCallback(); }
     }, 10000);
   });
