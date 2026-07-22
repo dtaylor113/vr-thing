@@ -5,9 +5,7 @@ import { createRoom, createDoor, createExitButton, ROOM_W, ROOM_D } from '../roo
 import { createFramedPhoto, createVideoScreen, createAnaglyphStereo, createStereoPair, createMuseumPlaque } from '../content.js';
 import { state } from '../state.js';
 import * as pdfjsLib from 'pdfjs-dist';
-import pdfjsWorker from 'pdfjs-dist/build/pdf.worker.mjs?url';
 
-pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
 
 export const HIST_X = 20;
 
@@ -148,7 +146,14 @@ export function buildDadsHistoryRoom() {
   );
   titansGroup.add(tvScreen);
 
-  let titansPlaying = false;
+  const titansVideoEntry = {
+    vid: titansVid,
+    canvas: titansCanvas,
+    ctx: titansCtx,
+    tex: titansTex,
+    playing: false,
+  };
+  state.allVideos.push(titansVideoEntry);
 
   function startTitansVideo() {
     titansGroup.visible = true;
@@ -157,31 +162,20 @@ export function buildDadsHistoryRoom() {
       console.warn('Titans video play failed, retrying:', e);
       titansVid.addEventListener('canplay', () => titansVid.play().catch(() => {}), { once: true });
     });
-    titansPlaying = true;
-    if (!state._titansAnimating) {
-      state._titansAnimating = true;
-      (function drawFrame() {
-        if (!titansPlaying) { state._titansAnimating = false; return; }
-        if (titansVid.readyState >= titansVid.HAVE_CURRENT_DATA) {
-          titansCtx.drawImage(titansVid, 0, 0, 1280, 720);
-          titansTex.needsUpdate = true;
-        }
-        requestAnimationFrame(drawFrame);
-      })();
-    }
+    titansVideoEntry.playing = true;
   }
 
   function stopTitansVideo() {
     titansVid.pause();
     titansVid.currentTime = 0;
-    titansPlaying = false;
+    titansVideoEntry.playing = false;
     titansGroup.visible = false;
   }
 
   const titansFrame = state.allFrameTargets[state.allFrameTargets.length - 1];
   titansFrame.play = startTitansVideo;
   titansFrame.stop = stopTitansVideo;
-  titansFrame.isPlaying = () => titansPlaying;
+  titansFrame.isPlaying = () => titansVideoEntry.playing;
 
   // GLB models — table and action figure on "Before Laura" side
   const gltfLoader = new GLTFLoader();
@@ -342,11 +336,41 @@ export function buildDadsHistoryRoom() {
   const pcRotY = -1.7;
   state.scene.add(pdfViewerGroup);
 
+  function showPdfError(msg) {
+    pdfCtx.fillStyle = '#222';
+    pdfCtx.fillRect(0, 0, 1024, 1400);
+    pdfCtx.fillStyle = '#ff4444';
+    pdfCtx.font = 'bold 32px sans-serif';
+    pdfCtx.textAlign = 'center';
+    pdfCtx.textBaseline = 'middle';
+    const lines = msg.split('\n');
+    lines.forEach((line, i) => pdfCtx.fillText(line, 512, 650 + i * 50));
+    pdfTex.needsUpdate = true;
+  }
+
   async function loadPdf() {
     if (pdfDoc) return;
-    const task = pdfjsLib.getDocument({ url: "/images/dad/Dave Taylor's GUI Portfolio.pdf" });
-    pdfDoc = await task.promise;
-    totalPages = pdfDoc.numPages;
+    try {
+      showPdfError('Loading PDF...');
+      const response = await fetch("/images/dad/DaveTaylorsGUIPortfolio.pdf");
+      if (!response.ok) {
+        showPdfError(`Fetch failed: ${response.status}\n${response.statusText}`);
+        return;
+      }
+      const arrayBuffer = await response.arrayBuffer();
+      showPdfError(`Fetched ${(arrayBuffer.byteLength / 1024).toFixed(0)}KB\nParsing...`);
+      const task = pdfjsLib.getDocument({
+        data: arrayBuffer,
+        disableWorker: true,
+        useWorkerFetch: false,
+        isEvalSupported: false,
+      });
+      pdfDoc = await task.promise;
+      totalPages = pdfDoc.numPages;
+    } catch (e) {
+      console.error('PDF fetch/load failed:', e);
+      showPdfError(`Error: ${e.message}`);
+    }
   }
 
   async function renderPdfPage(pageNum) {

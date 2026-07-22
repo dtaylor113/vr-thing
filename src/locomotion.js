@@ -1,9 +1,6 @@
 import {
   Vector3,
   Quaternion,
-  Line,
-  BufferGeometry,
-  LineBasicMaterial,
   PlaneGeometry,
   MeshBasicMaterial,
   Mesh,
@@ -36,11 +33,9 @@ export function clampToRoom(pos) {
   pos.y = Math.max(room.minY, Math.min(room.maxY, pos.y));
 }
 
-export const RAY_MAX = 8;
-
 /**
- * Creates hand models, controller objects, and ray lines.
- * Returns { controller0, controller1, ray0, ray1 }.
+ * Creates hand models, controller objects for input.
+ * Returns { controller0, controller1 }.
  */
 export function setupLocomotion() {
   const { renderer, dolly } = state;
@@ -63,23 +58,13 @@ export function setupLocomotion() {
   grip1.add(controllerModelFactory.createControllerModel(grip1));
   dolly.add(grip1);
 
-  const rayGeom = new BufferGeometry().setFromPoints([
-    new Vector3(0, 0, 0),
-    new Vector3(0, 0, -RAY_MAX),
-  ]);
-  const rayMat = new LineBasicMaterial({ color: 0x44aaff, transparent: true, opacity: 0.6 });
-
   const controller0 = renderer.xr.getController(0);
-  const ray0 = new Line(rayGeom.clone(), rayMat.clone());
-  controller0.add(ray0);
   dolly.add(controller0);
 
   const controller1 = renderer.xr.getController(1);
-  const ray1 = new Line(rayGeom.clone(), rayMat.clone());
-  controller1.add(ray1);
   dolly.add(controller1);
 
-  return { controller0, controller1, ray0, ray1 };
+  return { controller0, controller1 };
 }
 
 // ── Desktop keyboard movement ──
@@ -147,12 +132,10 @@ export function handleControllerLocomotion(dt) {
       dolly.position.add(dir);
     }
 
-    if (source.handedness === 'left') {
-      if (buttons[5] && buttons[5].pressed) {
-        dolly.position.y += MOVE_SPEED * dt;
-      }
-      if (buttons[4] && buttons[4].pressed) {
-        dolly.position.y -= MOVE_SPEED * dt;
+    if (source.handedness === 'right') {
+      const rz = axes[3] ?? 0;
+      if (Math.abs(rz) > 0.15) {
+        dolly.position.y -= rz * MOVE_SPEED * dt;
       }
     }
   }
@@ -183,10 +166,10 @@ export function createVRLegend() {
   ctx.fill();
 
   const lines = [
-    'Left Stick: Move',
-    'Y: Up  /  X: Down',
-    'Trigger: Select / Play',
-    'Floor: Click to Teleport',
+    'Look to aim',
+    'Left Stick: Move / Strafe',
+    'Right Stick: Up / Down',
+    'Trigger: Select / Teleport',
   ];
 
   ctx.fillStyle = '#ffffff';

@@ -7,6 +7,7 @@ import {
   RingGeometry,
   CircleGeometry,
   Raycaster,
+  AdditiveBlending,
 } from 'three';
 import { state } from './state.js';
 import { detectRoom } from './locomotion.js';
@@ -19,6 +20,7 @@ const mouse = new Vector2();
 
 let controller0, controller1;
 let markerGroup;
+let gazeReticle;
 let lastClickTime = 0;
 const CLICK_COOLDOWN = 500;
 let mouseDownPos = { x: 0, y: 0 };
@@ -28,6 +30,13 @@ function raycastFromController(ctrl) {
   ctrl.getWorldPosition(tempPos);
   ctrl.getWorldDirection(tempDir);
   tempDir.negate();
+  raycaster.set(tempPos, tempDir);
+}
+
+function raycastFromGaze() {
+  const { camera } = state;
+  camera.getWorldPosition(tempPos);
+  camera.getWorldDirection(tempDir);
   raycaster.set(tempPos, tempDir);
 }
 
@@ -71,7 +80,7 @@ function tryDoorTeleport(isDesktop) {
       if (isDesktop) {
         desktopTeleport(door.target, new Vector3(door.target.x, door.target.y, door.target.z - 2));
       } else {
-        state.dolly.position.set(door.target.x, 0, door.target.z);
+        state.dolly.position.set(door.target.x, 0.5, door.target.z);
       }
       detectRoom(door.target);
       return true;
@@ -111,7 +120,7 @@ function tryFrameTeleport(isDesktop) {
           if (isDesktop) {
             desktopTeleport(frame.target, frame.contentPos);
           } else {
-            state.dolly.position.set(frame.target.x, 0, frame.target.z);
+            state.dolly.position.copy(frame.target);
           }
         }
         if (frame.play) {
@@ -149,9 +158,43 @@ function updateTeleportMarker(ctrl) {
   }
 }
 
-function onSelect(event) {
-  const ctrl = event.target;
-  raycastFromController(ctrl);
+function createGazeReticle() {
+  const group = new Group();
+  const outerRing = new Mesh(
+    new RingGeometry(0.018, 0.028, 32),
+    new MeshBasicMaterial({
+      color: 0x44aaff,
+      transparent: true,
+      opacity: 0.85,
+      depthTest: false,
+      blending: AdditiveBlending,
+    }),
+  );
+  group.add(outerRing);
+  const innerDot = new Mesh(
+    new CircleGeometry(0.008, 16),
+    new MeshBasicMaterial({
+      color: 0xffffff,
+      transparent: true,
+      opacity: 0.95,
+      depthTest: false,
+      blending: AdditiveBlending,
+    }),
+  );
+  innerDot.position.z = 0.001;
+  group.add(innerDot);
+  group.renderOrder = 999;
+  group.visible = false;
+  state.scene.add(group);
+  return group;
+}
+
+let lastVRClickTime = 0;
+function onSelect() {
+  const now = performance.now();
+  if (now - lastVRClickTime < CLICK_COOLDOWN) return;
+  lastVRClickTime = now;
+  raycastFromGaze();
   if (tryExitVR()) return;
   if (tryDoorTeleport(false)) return;
   if (tryFrameTeleport(false)) return;
@@ -262,6 +305,8 @@ export function setupInteraction(ctrl0, ctrl1) {
   markerGroup.visible = false;
   state.scene.add(markerGroup);
 
+  gazeReticle = createGazeReticle();
+
   controller0.addEventListener('select', onSelect);
   controller1.addEventListener('select', onSelect);
 
@@ -273,45 +318,52 @@ export function setupInteraction(ctrl0, ctrl1) {
 export function updateHoverEffects(now) {
   const pulse = 0.5 + 0.5 * Math.sin(now * 0.003);
 
-  updateTeleportMarker(controller0);
+  raycastFromGaze();
+
+  // Gaze reticle: position at nearest surface hit
+  if (gazeReticle) {
+    const gazeHits = raycaster.intersectObjects(state.scene.children, true)
+      .filter((h) => h.object !== gazeReticle && !gazeReticle.getObjectByProperty('uuid', h.object.uuid));
+    if (gazeHits.length > 0) {
+      gazeReticle.position.copy(gazeHits[0].point);
+      const normal = gazeHits[0].face?.normal || tempDir.clone().negate();
+      gazeReticle.position.addScaledVector(normal, 0.01);
+      gazeReticle.lookAt(tempPos);
+      gazeReticle.visible = true;
+      const dist = gazeHits[0].distance;
+      const s = 0.5 + dist * 0.15;
+      gazeReticle.scale.setScalar(s);
+    } else {
+      gazeReticle.visible = false;
+    }
+  }
+
+  // Floor teleport marker via gaze
+  const floorHits = raycaster.intersectObjects(state.allFloors);
+  if (floorHits.length > 0 && markerGroup) {
+    markerGroup.position.copy(floorHits[0].point);
+    markerGroup.position.y += 0.01;
+    markerGroup.visible = true;
+  } else if (markerGroup) {
+    markerGroup.visible = false;
+  }
 
   for (const eb of state.allExitBtns) {
     eb.material.emissiveIntensity = 0.2 + 0.3 * pulse;
-    raycastFromController(controller0);
-    const h0 = raycaster.intersectObject(eb).length > 0;
-    raycastFromController(controller1);
-    const h1 = raycaster.intersectObject(eb).length > 0;
-    eb.scale.setScalar(h0 || h1 ? 1.15 : 1.0);
+    const hit = raycaster.intersectObject(eb).length > 0;
+    eb.scale.setScalar(hit ? 1.15 : 1.0);
   }
 
   for (const d of state.doorTargets) {
-    raycastFromController(controller0);
-    const dh0 = raycaster.intersectObject(d.panel).length > 0;
-    raycastFromController(controller1);
-    const dh1 = raycaster.intersectObject(d.panel).length > 0;
-    d.hoverSpot.intensity = (dh0 || dh1) ? 21 : 0;
+    const hit = raycaster.intersectObject(d.panel).length > 0;
+    d.hoverSpot.intensity = hit ? 21 : 0;
   }
 
   for (const f of state.allFrameTargets) {
     if (!f.borderMat) continue;
     if (!isWorldVisible(f.mesh)) { f.borderMat.emissiveIntensity = 0; continue; }
-    raycastFromController(controller0);
-    const fh0 = raycaster.intersectObject(f.mesh).length > 0;
-    raycastFromController(controller1);
-    const fh1 = raycaster.intersectObject(f.mesh).length > 0;
-    f.borderMat.emissiveIntensity = (fh0 || fh1) ? 0.7 : 0;
-  }
-}
-
-export function shortenRays(rays) {
-  const rayMeshes = new Set(rays.map((r) => r.ray));
-  for (const { ctrl, ray, maxLen } of rays) {
-    raycastFromController(ctrl);
-    const hits = raycaster.intersectObjects(state.scene.children, true)
-      .filter((h) => !rayMeshes.has(h.object));
-    const pos = ray.geometry.attributes.position;
-    pos.setZ(1, hits.length > 0 ? -hits[0].distance : -maxLen);
-    pos.needsUpdate = true;
+    const hit = raycaster.intersectObject(f.mesh).length > 0;
+    f.borderMat.emissiveIntensity = hit ? 0.7 : 0;
   }
 }
 

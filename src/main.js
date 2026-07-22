@@ -9,8 +9,8 @@ import {
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { VRButton } from 'three/addons/webxr/VRButton.js';
 import { state } from './state.js';
-import { setupLocomotion, handleControllerLocomotion, handleDesktopLocomotion, clampToRoom, RAY_MAX, createVRLegend } from './locomotion.js';
-import { setupInteraction, updateHoverEffects, shortenRays } from './interaction.js';
+import { setupLocomotion, handleControllerLocomotion, handleDesktopLocomotion, clampToRoom, createVRLegend } from './locomotion.js';
+import { setupInteraction, updateHoverEffects } from './interaction.js';
 import { allVideosReady, onVideoLoadProgress } from './content.js';
 import { buildMainRoom } from './rooms/mainRoom.js';
 import { buildDadsHistoryRoom } from './rooms/dadsHistory.js';
@@ -46,11 +46,14 @@ buildDadsHistoryRoom();
 buildLaurasRoom();
 
 // ── Input ──
-const { controller0, controller1, ray0, ray1 } = setupLocomotion();
+const { controller0, controller1 } = setupLocomotion();
 setupInteraction(controller0, controller1);
 
+const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) ||
+  (navigator.maxTouchPoints > 1 && !window.matchMedia('(pointer: fine)').matches);
+
 // ── Edit mode (desktop only) ──
-setupEditMode();
+if (!isMobile) setupEditMode();
 
 // ── VR controller legend ──
 const vrLegend = createVRLegend();
@@ -86,27 +89,44 @@ onVideoLoadProgress(() => {
   loadingBar.style.width = `${pct}%`;
 });
 
+// ── Mobile UI setup ──
+if (isMobile) {
+  info.style.display = 'none';
+  const navSpan = document.getElementById('controls-nav');
+  if (navSpan) {
+    navSpan.innerHTML =
+      'Drag to look &nbsp; Pinch to zoom<br>' +
+      'Tap floor to teleport &nbsp; Tap frame to play';
+  }
+}
+
 allVideosReady().then(() => {
   renderer.xr.enabled = true;
-  const vrBtn = VRButton.createButton(renderer, { optionalFeatures: ['hand-tracking'] });
-  document.body.appendChild(vrBtn);
-  function checkVrSupport() {
-    if (vrBtn.textContent.includes('NOT SUPPORTED')) {
-      vrBtn.classList.add('vr-not-supported');
+  if (!isMobile) {
+    const vrBtn = VRButton.createButton(renderer, { optionalFeatures: ['hand-tracking'] });
+    document.body.appendChild(vrBtn);
+    function checkVrSupport() {
+      if (vrBtn.textContent.includes('NOT SUPPORTED')) {
+        vrBtn.classList.add('vr-not-supported');
+      }
     }
+    checkVrSupport();
+    new MutationObserver(checkVrSupport).observe(vrBtn, { childList: true, characterData: true, subtree: true });
+    info.textContent = 'Ready \u2013 click "Enter VR" on your headset!';
   }
-  checkVrSupport();
-  new MutationObserver(checkVrSupport).observe(vrBtn, { childList: true, characterData: true, subtree: true });
   overlay.classList.add('fade-out');
   setTimeout(() => overlay.remove(), 700);
-  info.textContent = 'Ready \u2013 click "Enter VR" on your headset!';
+
+  // Raise dolly when entering VR so user starts at a comfortable height
+  renderer.xr.addEventListener('sessionstart', () => {
+    dolly.position.y = 0.5;
+  });
+  renderer.xr.addEventListener('sessionend', () => {
+    dolly.position.y = 0;
+  });
 });
 
 // ── Render loop ──
-const rayEntries = [
-  { ctrl: controller0, ray: ray0, maxLen: RAY_MAX },
-  { ctrl: controller1, ray: ray1, maxLen: RAY_MAX },
-];
 const controlsHUD = document.getElementById('controls');
 let lastTime = performance.now();
 
@@ -130,7 +150,6 @@ renderer.setAnimationLoop(() => {
   if (inVR) {
     handleControllerLocomotion(dt);
     updateHoverEffects(now);
-    shortenRays(rayEntries);
     if (controlsHUD) controlsHUD.style.display = 'none';
   } else {
     handleDesktopLocomotion(dt);

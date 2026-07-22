@@ -83,6 +83,10 @@
       min-width: 18px;
       text-align: center;
     }
+    @media (max-width: 768px), (hover: none) and (pointer: coarse) {
+      #info { display: none !important; }
+      #edit-banner, #edit-hud { display: none !important; }
+    }
     #loading-overlay {
       position: fixed;
       inset: 0;
