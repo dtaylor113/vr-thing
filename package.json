@@ -9,9 +9,7 @@
     "preview": "vite preview --host"
   },
   "dependencies": {
-    "@lumaai/luma-web": "^0.2.2",
     "jsmediatags": "^3.9.7",
-    "pdfjs-dist": "^6.1.200",
     "three": "^0.157.0",
     "vite": "^8.1.4"
   },

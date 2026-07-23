@@ -2,9 +2,8 @@ import { Group, Vector3, TextureLoader, PlaneGeometry, Box3, BoxGeometry, MeshBa
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import jsmediatags from 'jsmediatags';
 import { createRoom, createDoor, createExitButton, ROOM_W, ROOM_D } from '../room.js';
-import { createFramedPhoto, createVideoScreen, createAnaglyphStereo, createStereoPair, createMuseumPlaque } from '../content.js';
+import { createFramedPhoto, createVideoScreen, createAnaglyphStereo, createStereoPair, createMuseumPlaque, makeTextTexture, createBorderFrame } from '../content.js';
 import { state } from '../state.js';
-import * as pdfjsLib from 'pdfjs-dist';
 
 
 export const HIST_X = 20;
@@ -198,18 +197,17 @@ export function buildDadsHistoryRoom() {
     state.scene.add(dave);
   });
 
-  // --- PDF Viewer for Retro PC ---
-  let pdfDoc = null;
+  // --- Portfolio Viewer (pre-rendered page images) ---
+  const TOTAL_PAGES = 26;
   let currentPage = 1;
-  let totalPages = 0;
 
-  const pdfCanvas = document.createElement('canvas');
-  pdfCanvas.width = 1024;
-  pdfCanvas.height = 1400;
-  const pdfCtx = pdfCanvas.getContext('2d');
-  pdfCtx.fillStyle = '#222';
-  pdfCtx.fillRect(0, 0, 1024, 1400);
-  const pdfTex = new CanvasTexture(pdfCanvas);
+  const pageCanvas = document.createElement('canvas');
+  pageCanvas.width = 1440;
+  pageCanvas.height = 1080;
+  const pageCtx = pageCanvas.getContext('2d');
+  pageCtx.fillStyle = '#222';
+  pageCtx.fillRect(0, 0, 1440, 1080);
+  const pdfTex = new CanvasTexture(pageCanvas);
 
   const pdfViewerGroup = new Group();
   pdfViewerGroup.name = 'pdf_viewer';
@@ -217,8 +215,8 @@ export function buildDadsHistoryRoom() {
   pdfViewerGroup.rotation.y = -1.7;
   pdfViewerGroup.visible = false;
 
-  const pdfDisplayW = 1.2;
-  const pdfDisplayH = 1.6;
+  const pdfDisplayW = 1.6;
+  const pdfDisplayH = 1.2;
 
   const pdfBg = new Mesh(
     new PlaneGeometry(pdfDisplayW + 0.06, pdfDisplayH + 0.06),
@@ -246,15 +244,15 @@ export function buildDadsHistoryRoom() {
     counterCtx.font = 'bold 28px sans-serif';
     counterCtx.textAlign = 'center';
     counterCtx.textBaseline = 'middle';
-    counterCtx.fillText(`Page ${currentPage} of ${totalPages}`, 128, 32);
+    counterCtx.fillText(`Page ${currentPage} of ${TOTAL_PAGES}`, 128, 32);
     counterTex.needsUpdate = true;
   }
 
   const counterMesh = new Mesh(
-    new PlaneGeometry(0.5, 0.12),
+    new PlaneGeometry(0.42, 0.10),
     new MeshBasicMaterial({ map: counterTex }),
   );
-  counterMesh.position.set(0, -(pdfDisplayH / 2) - 0.10, 0.02);
+  counterMesh.position.set(0, pdfDisplayH / 2 + 0.16, 0.02);
   pdfViewerGroup.add(counterMesh);
 
   const prevCanvas = document.createElement('canvas');
@@ -270,10 +268,10 @@ export function buildDadsHistoryRoom() {
   prevCtx.fillText('\u25C0 Prev', 64, 32);
   const prevTex = new CanvasTexture(prevCanvas);
   const prevBtn = new Mesh(
-    new PlaneGeometry(0.3, 0.12),
+    new PlaneGeometry(0.25, 0.10),
     new MeshBasicMaterial({ map: prevTex }),
   );
-  prevBtn.position.set(-0.02, -(pdfDisplayH / 2) - 0.24, 0.02);
+  prevBtn.position.set(-0.42, pdfDisplayH / 2 + 0.16, 0.02);
   pdfViewerGroup.add(prevBtn);
 
   const nextCanvas = document.createElement('canvas');
@@ -289,10 +287,10 @@ export function buildDadsHistoryRoom() {
   nextCtx.fillText('Next \u25B6', 64, 32);
   const nextTex = new CanvasTexture(nextCanvas);
   const nextBtn = new Mesh(
-    new PlaneGeometry(0.3, 0.12),
+    new PlaneGeometry(0.25, 0.10),
     new MeshBasicMaterial({ map: nextTex }),
   );
-  nextBtn.position.set(0.32, -(pdfDisplayH / 2) - 0.24, 0.02);
+  nextBtn.position.set(0.42, pdfDisplayH / 2 + 0.16, 0.02);
   pdfViewerGroup.add(nextBtn);
 
   const rewindCanvas = document.createElement('canvas');
@@ -308,10 +306,10 @@ export function buildDadsHistoryRoom() {
   rewindCtx.fillText('\u23EE Pg 1', 64, 32);
   const rewindTex = new CanvasTexture(rewindCanvas);
   const rewindBtn = new Mesh(
-    new PlaneGeometry(0.3, 0.12),
+    new PlaneGeometry(0.25, 0.10),
     new MeshBasicMaterial({ map: rewindTex }),
   );
-  rewindBtn.position.set(-0.36, -(pdfDisplayH / 2) - 0.24, 0.02);
+  rewindBtn.position.set(-0.78, pdfDisplayH / 2 + 0.16, 0.02);
   pdfViewerGroup.add(rewindBtn);
 
   const closeCanvas = document.createElement('canvas');
@@ -330,169 +328,134 @@ export function buildDadsHistoryRoom() {
     new PlaneGeometry(0.12, 0.12),
     new MeshBasicMaterial({ map: closeTex }),
   );
-  closeBtn.position.set(pdfDisplayW / 2 + 0.02, pdfDisplayH / 2 + 0.02, 0.02);
+  closeBtn.position.set(pdfDisplayW / 2 + 0.02, pdfDisplayH / 2 + 0.16, 0.02);
   pdfViewerGroup.add(closeBtn);
 
   const pcRotY = -1.7;
   state.scene.add(pdfViewerGroup);
 
-  function showPdfError(msg) {
-    pdfCtx.fillStyle = '#222';
-    pdfCtx.fillRect(0, 0, 1024, 1400);
-    pdfCtx.fillStyle = '#ff4444';
-    pdfCtx.font = 'bold 32px sans-serif';
-    pdfCtx.textAlign = 'center';
-    pdfCtx.textBaseline = 'middle';
-    const lines = msg.split('\n');
-    lines.forEach((line, i) => pdfCtx.fillText(line, 512, 650 + i * 50));
-    pdfTex.needsUpdate = true;
+  function renderPage(pageNum) {
+    const img = new Image();
+    const padded = String(pageNum).padStart(2, '0');
+    img.src = `/images/dad/portfolio/page_${padded}.jpg`;
+    img.onload = () => {
+      pageCtx.drawImage(img, 0, 0, 1440, 1080);
+      pdfTex.needsUpdate = true;
+      updateCounter();
+    };
+    img.onerror = () => {
+      pageCtx.fillStyle = '#222';
+      pageCtx.fillRect(0, 0, 1440, 1080);
+      pageCtx.fillStyle = '#ff4444';
+      pageCtx.font = 'bold 48px sans-serif';
+      pageCtx.textAlign = 'center';
+      pageCtx.fillText(`Page ${pageNum} not found`, 720, 540);
+      pdfTex.needsUpdate = true;
+    };
   }
 
-  async function loadPdf() {
-    if (pdfDoc) return;
-    try {
-      showPdfError('Loading PDF...');
-      const response = await fetch("/images/dad/DaveTaylorsGUIPortfolio.pdf");
-      if (!response.ok) {
-        showPdfError(`Fetch failed: ${response.status}\n${response.statusText}`);
-        return;
-      }
-      const arrayBuffer = await response.arrayBuffer();
-      showPdfError(`Fetched ${(arrayBuffer.byteLength / 1024).toFixed(0)}KB\nParsing...`);
-      const task = pdfjsLib.getDocument({
-        data: arrayBuffer,
-        disableWorker: true,
-        useWorkerFetch: false,
-        isEvalSupported: false,
-      });
-      pdfDoc = await task.promise;
-      totalPages = pdfDoc.numPages;
-    } catch (e) {
-      console.error('PDF fetch/load failed:', e);
-      showPdfError(`Error: ${e.message}`);
+  // Add border frame around PDF display for hover highlighting
+  const pdfBorder = createBorderFrame(pdfDisplayW, pdfDisplayH, 0.06);
+  pdfViewerGroup.add(pdfBorder);
+
+  // Invisible hit area for raycasting on the PDF viewer
+  const pdfHitArea = new Mesh(
+    new PlaneGeometry(pdfDisplayW + 0.12, pdfDisplayH + 0.12),
+    new MeshBasicMaterial({ visible: false }),
+  );
+  pdfHitArea.position.z = 0.01;
+  pdfViewerGroup.add(pdfHitArea);
+
+  // --- "Work" section on east wall (toggled by computer click) ---
+  // PDF viewer on the right side (lower Z = right when facing east wall)
+  const workWallX = ewx;
+  const pdfZ = 1.2;
+  pdfViewerGroup.position.set(workWallX, 2.3, pdfZ);
+  pdfViewerGroup.rotation.y = -Math.PI / 2;
+
+  // Hackathon videos stacked vertically on the left side (higher Z = left)
+  const hackZ = 3.5;
+  createVideoScreen('/video/Dave/DavesHackathon_2022.mp4', 1.1,
+    new Vector3(24.96, 3.05, hackZ), -Math.PI / 2, { keepActiveFrame: true });
+  createVideoScreen('/video/Dave/DavesHackathon2023.mp4', 1.1,
+    new Vector3(24.96, 2.05, hackZ), -Math.PI / 2, { keepActiveFrame: true });
+  createVideoScreen('/video/Dave/DavesHackathon2025.mp4', 1.1,
+    new Vector3(24.96, 1.10, hackZ), -Math.PI / 2, { keepActiveFrame: true });
+
+  // "Work" wall title centered above the work content
+  const workCenterZ = (pdfZ + hackZ) / 2;
+  const workTitleTex = makeTextTexture('Work', 'transparent', '#aabbcc', 1024, 128, 72);
+  const workTitle = new Mesh(
+    new PlaneGeometry(2.0, 0.3),
+    new MeshBasicMaterial({ map: workTitleTex, transparent: true }),
+  );
+  workTitle.position.set(workWallX - 0.02, 3.6, workCenterZ);
+  workTitle.rotation.y = -Math.PI / 2;
+  workTitle.visible = false;
+  state.scene.add(workTitle);
+
+  // Spotlight illuminating the Work section from above
+  const workSpot = new SpotLight(0xffeedd, 0, 6, Math.PI / 10, 0.6, 1);
+  workSpot.position.set(workWallX - 1.5, 3.9, workCenterZ);
+  workSpot.target.position.set(workWallX, 2.0, workCenterZ);
+  state.scene.add(workSpot);
+  state.scene.add(workSpot.target);
+
+  // Track hackathon video names for show/hide
+  const hackathonVideoNames = ['video:DavesHackathon_2022.mp4', 'video:DavesHackathon2023.mp4', 'video:DavesHackathon2025.mp4'];
+
+
+  function setWorkSectionVisible(visible) {
+    pdfViewerGroup.visible = visible;
+    workTitle.visible = visible;
+    workSpot.intensity = visible ? 40 : 0;
+    // Show/hide hackathon video frames
+    for (const name of hackathonVideoNames) {
+      const obj = state.scene.getObjectByName(name);
+      if (obj) obj.visible = visible;
     }
+    // Toggle Dave photo and wooden frame inversely
+    const davePhoto = state.scene.getObjectByName('Dave_photo');
+    const woodenFrame = state.scene.getObjectByName('wooden_frame');
+    if (davePhoto) davePhoto.visible = !visible;
+    if (woodenFrame) woodenFrame.visible = !visible;
   }
 
-  async function renderPdfPage(pageNum) {
-    if (!pdfDoc) return;
-    const page = await pdfDoc.getPage(pageNum);
-    const baseViewport = page.getViewport({ scale: 1.0 });
-    const scale = Math.min(1024 / baseViewport.width, 1400 / baseViewport.height);
-    const viewport = page.getViewport({ scale });
-    pdfCtx.fillStyle = '#fff';
-    pdfCtx.fillRect(0, 0, 1024, 1400);
-    const offsetX = (1024 - viewport.width) / 2;
-    const offsetY = (1400 - viewport.height) / 2;
-    pdfCtx.save();
-    pdfCtx.translate(offsetX, offsetY);
-    await page.render({ canvasContext: pdfCtx, viewport }).promise;
-    pdfCtx.restore();
-    pdfTex.needsUpdate = true;
-    updateCounter();
-  }
+  // Hide hackathon videos initially (they appear when computer is clicked)
+  setTimeout(() => {
+    for (const name of hackathonVideoNames) {
+      const obj = state.scene.getObjectByName(name);
+      if (obj) obj.visible = false;
+    }
+  }, 2000);
 
   const pcFrame = {
     mesh: null,
     borderMat: null,
-    target: new Vector3(
-      23.30 + Math.sin(pcRotY) * 1.5,
-      1.6,
-      -0.01 + Math.cos(pcRotY) * 1.5,
-    ),
-    contentPos: new Vector3(23.30, 2.20, -0.01),
-    play: async () => {
-      pdfViewerGroup.visible = true;
-      showPdfVideos(true);
-      try {
-        await loadPdf();
-        await renderPdfPage(currentPage);
-      } catch (e) {
-        console.error('PDF load/render failed:', e);
-      }
+    target: null,
+    contentPos: null,
+    play: () => {
+      setWorkSectionVisible(true);
+      renderPage(currentPage);
     },
     stop: () => {
-      pdfViewerGroup.visible = false;
-      showPdfVideos(false);
+      setWorkSectionVisible(false);
     },
     isPlaying: () => pdfViewerGroup.visible,
   };
 
-  // Hackathon videos flanking PDF viewer (hidden until viewer opens)
-  const pdfViewerPos = new Vector3(23.30, 2.20, -0.01);
-  const perpX = Math.cos(pcRotY);
-  const perpZ = -Math.sin(pcRotY);
-  const sideOffset = 1.4;
-  createVideoScreen('/video/Dave/DavesHackathon_2022.mp4', 1.4,
-    new Vector3(pdfViewerPos.x - perpX * sideOffset, pdfViewerPos.y, pdfViewerPos.z - perpZ * sideOffset), pcRotY, { borderWidth: 0.03 });
-  createVideoScreen('/video/Dave/DavesHackathon2025.mp4', 1.4,
-    new Vector3(pdfViewerPos.x + perpX * sideOffset, pdfViewerPos.y, pdfViewerPos.z + perpZ * sideOffset), pcRotY, { borderWidth: 0.03 });
-
-  const pdfVideoNames = ['video:DavesHackathon_2022.mp4', 'video:DavesHackathon2025.mp4'];
-  function showPdfVideos(visible) {
-    for (const name of pdfVideoNames) {
-      const obj = state.scene.getObjectByName(name);
-      if (!obj) continue;
-      if (!visible) {
-        // Don't hide if this video is actively playing
-        const fname = name.replace('video:', '');
-        const entry = state.allVideos.find(v => v.vid.src && v.vid.src.includes(fname));
-        if (entry && entry.playing) continue;
-      }
-      obj.visible = visible;
-    }
-  }
-  // Hide initially, tag as keepActiveFrame, and add skip buttons
-  setTimeout(() => {
-    showPdfVideos(false);
-    for (const name of pdfVideoNames) {
-      const obj = state.scene.getObjectByName(name);
-      if (!obj) continue;
-      const fname = name.replace('video:', '');
-      const vidEntry = state.allVideos.find(v => v.vid.src && v.vid.src.includes(fname));
-
-      for (const f of state.allFrameTargets) {
-        if (obj.getObjectByProperty('uuid', f.mesh.uuid)) {
-          f.keepActiveFrame = true;
-          f.target = null;
-          const originalPlay = f.play;
-          f.play = () => {
-            obj.visible = true;
-            if (originalPlay) originalPlay();
-          };
-          const originalStop = f.stop;
-          f.stop = () => {
-            if (vidEntry) { vidEntry.vid.pause(); vidEntry.playing = false; }
-            if (originalStop) originalStop();
-            obj.visible = false;
-          };
-        }
-      }
-
-      if (!vidEntry) continue;
-      const vid = vidEntry.vid;
-      const skipCanvas = document.createElement('canvas');
-      skipCanvas.width = 128; skipCanvas.height = 48;
-      const ctx = skipCanvas.getContext('2d');
-      ctx.fillStyle = '#222'; ctx.fillRect(0, 0, 128, 48);
-      ctx.fillStyle = '#ffd700'; ctx.font = 'bold 20px sans-serif';
-      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.fillText('\u25B6\u25B6 +1 min', 64, 24);
-      const skipTex = new CanvasTexture(skipCanvas);
-      const skipBtn = new Mesh(new PlaneGeometry(0.3, 0.1), new MeshBasicMaterial({ map: skipTex }));
-
-      const box = new Box3().setFromObject(obj);
-      skipBtn.position.set(0, box.min.y - obj.position.y - 0.35, 0.02);
-      obj.add(skipBtn);
-
-      state.allFrameTargets.push({
-        mesh: skipBtn, borderMat: null, target: null, contentPos: null,
-        isSubControl: true, keepActiveFrame: true,
-        play: () => { vid.currentTime = Math.min(vid.currentTime + 60, vid.duration - 0.5); },
-        stop: () => {},
-        isPlaying: () => !vid.paused && !vid.ended,
-      });
-    }
-  }, 2000);
+  // Register PDF viewer as a clickable frame (teleport to eye level in front of it)
+  const pdfBorderMat = pdfBorder.userData.frameMat;
+  state.allFrameTargets.push({
+    mesh: pdfHitArea,
+    borderMat: pdfBorderMat,
+    target: new Vector3(workWallX - 2.0, 1.6, pdfZ),
+    contentPos: new Vector3(workWallX, 2.3, pdfZ),
+    keepActiveFrame: true,
+    play: () => { state.activeFrame = pcFrame; },
+    stop: () => {},
+    isPlaying: () => false,
+  });
 
   gltfLoader.load('/models/retro-pc.glb', (gltf) => {
     const pc = gltf.scene;
@@ -552,7 +515,7 @@ export function buildDadsHistoryRoom() {
     play: () => {
       if (currentPage > 1) {
         currentPage--;
-        renderPdfPage(currentPage);
+        renderPage(currentPage);
       }
       state.activeFrame = pcFrame;
     },
@@ -567,9 +530,9 @@ export function buildDadsHistoryRoom() {
     contentPos: null,
     isSubControl: true,
     play: () => {
-      if (currentPage < totalPages) {
+      if (currentPage < TOTAL_PAGES) {
         currentPage++;
-        renderPdfPage(currentPage);
+        renderPage(currentPage);
       }
       state.activeFrame = pcFrame;
     },
@@ -585,7 +548,7 @@ export function buildDadsHistoryRoom() {
     isSubControl: true,
     play: () => {
       currentPage = 1;
-      renderPdfPage(currentPage);
+      renderPage(currentPage);
       state.activeFrame = pcFrame;
     },
     stop: () => {},
@@ -599,8 +562,7 @@ export function buildDadsHistoryRoom() {
     contentPos: null,
     isSubControl: true,
     play: () => {
-      pdfViewerGroup.visible = false;
-      showPdfVideos(false);
+      setWorkSectionVisible(false);
       state.activeFrame = null;
     },
     stop: () => {},

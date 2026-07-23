@@ -264,7 +264,8 @@ function onMouseMove(event) {
   for (const f of state.allFrameTargets) {
     if (!isWorldVisible(f.mesh)) { if (f.borderMat) f.borderMat.emissiveIntensity = 0; continue; }
     const hit = raycaster.intersectObject(f.mesh).length > 0;
-    if (f.borderMat) f.borderMat.emissiveIntensity = hit ? 0.7 : 0;
+    const active = f.isPlaying && f.isPlaying();
+    if (f.borderMat) f.borderMat.emissiveIntensity = hit ? 0.7 : (active ? 0.4 : 0);
     if (hit) hovering = true;
   }
 
@@ -363,7 +364,8 @@ export function updateHoverEffects(now) {
     if (!f.borderMat) continue;
     if (!isWorldVisible(f.mesh)) { f.borderMat.emissiveIntensity = 0; continue; }
     const hit = raycaster.intersectObject(f.mesh).length > 0;
-    f.borderMat.emissiveIntensity = hit ? 0.7 : 0;
+    const active = f.isPlaying && f.isPlaying();
+    f.borderMat.emissiveIntensity = hit ? 0.7 : (active ? 0.4 : 0);
   }
 }
 

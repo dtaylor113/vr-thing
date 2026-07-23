@@ -228,7 +228,7 @@ export function createMuseumPlaque(paragraphs, displayW, pos, rotY, label, { can
   return mesh;
 }
 
-function registerFrame(mesh, border, contentH, contentW, pos, rotY, play, stop, isPlaying, customStandoff) {
+function registerFrame(mesh, border, contentH, contentW, pos, rotY, play, stop, isPlaying, customStandoff, extraProps) {
   const standoff = customStandoff || 1.5;
   const target = new Vector3(
     pos.x + Math.sin(rotY) * standoff,
@@ -243,6 +243,7 @@ function registerFrame(mesh, border, contentH, contentW, pos, rotY, play, stop, 
     play: play || null,
     stop: stop || null,
     isPlaying: isPlaying || (() => false),
+    ...extraProps,
   });
 }
 
@@ -302,7 +303,7 @@ export function createFramedPhoto(src, photoW, photoH, pos, rotY, { audioSrc, hi
   return group;
 }
 
-export function createVideoScreen(src, displayWidth, pos, rotY, { borderWidth } = {}) {
+export function createVideoScreen(src, displayWidth, pos, rotY, { borderWidth, keepActiveFrame } = {}) {
   const vid = document.createElement('video');
   vid.src = src;
   vid.crossOrigin = 'anonymous';
@@ -370,7 +371,7 @@ export function createVideoScreen(src, displayWidth, pos, rotY, { borderWidth } 
       const vh = vid.videoHeight || 480;
       const aspect = vh / vw;
       const h = displayWidth * aspect;
-      const texW = 512;
+      const texW = vw > 1000 ? 1024 : 512;
       const texH = Math.max(1, Math.round(texW * aspect));
 
       const canvas = document.createElement('canvas');
@@ -409,7 +410,8 @@ export function createVideoScreen(src, displayWidth, pos, rotY, { borderWidth } 
       nameplate.position.set(0, -(h / 2) - 0.2, 0.05);
       group.add(nameplate);
 
-      registerFrame(hitArea, border, h, displayWidth, pos, rotY, play, stop, isPlaying);
+      const frameExtra = keepActiveFrame ? { keepActiveFrame: true } : undefined;
+      registerFrame(hitArea, border, h, displayWidth, pos, rotY, play, stop, isPlaying, undefined, frameExtra);
 
       vid.currentTime = Math.min(5.0, vid.duration * 0.05);
     });
